@@ -19,6 +19,16 @@ const AuthForm = ({ isSignUp }: { isSignUp?: boolean }) => {
   const [password, setPassword] = useState('');
   const { toast } = useToast();
 
+  const handleAuthError = (error: any) => {
+    let description = error.message;
+    if (error.code === 'auth/configuration-not-found') {
+      description = 'This sign-in method is not enabled. Please enable it in your Firebase console under Authentication > Sign-in method.';
+    } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+      description = 'Invalid email or password. Please try again.';
+    }
+    toast({ variant: 'destructive', title: isSignUp ? 'Sign-up failed' : 'Sign-in failed', description });
+  };
+
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
@@ -27,7 +37,7 @@ const AuthForm = ({ isSignUp }: { isSignUp?: boolean }) => {
     try {
       await signInWithPopup(auth, provider);
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Sign-in failed', description: error.message });
+      handleAuthError(error);
     }
   };
 
@@ -40,7 +50,7 @@ const AuthForm = ({ isSignUp }: { isSignUp?: boolean }) => {
         await signInWithEmailAndPassword(auth, email, password);
       }
     } catch (error: any) {
-      toast({ variant: 'destructive', title: 'Authentication Failed', description: error.message });
+      handleAuthError(error);
     }
   };
 
