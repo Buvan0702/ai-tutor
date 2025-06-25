@@ -5,11 +5,13 @@ import {
   BrainCircuit,
   LayoutDashboard,
   PlusCircle,
+  BookOpenCheck,
 } from 'lucide-react';
 import { AuthButton } from './auth-button';
 import QuizCreator from './quiz/quiz-creator';
 import PerformanceDashboard from './quiz/performance-dashboard';
 import QuizSession from './quiz/quiz-session';
+import LearningPaths from './learning-paths';
 import type { QuizQuestion } from '@/lib/types';
 import { generateQuizAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -26,7 +28,7 @@ import {
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/context/auth-context';
 
-type ActiveView = 'dashboard' | 'new-quiz';
+type ActiveView = 'dashboard' | 'new-quiz' | 'learning-paths';
 
 export default function QuizApp() {
   const [activeView, setActiveView] = useState<ActiveView>('dashboard');
@@ -46,6 +48,26 @@ export default function QuizApp() {
     setQuizTopic(topic);
     setQuizDifficulty(difficulty);
     setQuizKey((prev) => prev + 1);
+  };
+
+  const handleStartQuizFromPath = async (topic: string) => {
+    toast({ title: 'Generating your quiz...', description: `Topic: ${topic}` });
+    const result = await generateQuizAction({
+      topic,
+      questionCount: 5, // Default for learning paths
+      difficulty: 'Medium', // Default for learning paths
+    });
+
+    if (result.success && result.questions && result.questions.length > 0) {
+      handleQuizCreated(result.questions, topic, 'Medium');
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to Start Quiz',
+        description:
+          result.error || 'Could not generate questions for this topic.',
+      });
+    }
   };
 
   const handleQuizFinish = () => {
@@ -86,6 +108,7 @@ export default function QuizApp() {
   const PageTitle: Record<ActiveView, string> = {
     dashboard: 'Performance Dashboard',
     'new-quiz': 'Create New Quiz',
+    'learning-paths': 'Learning Paths',
   };
 
   const renderContent = () => {
@@ -111,6 +134,8 @@ export default function QuizApp() {
         );
       case 'new-quiz':
         return <QuizCreator onQuizCreated={handleQuizCreated} />;
+      case 'learning-paths':
+        return <LearningPaths onStartQuiz={handleStartQuizFromPath} />;
       default:
         return null;
     }
@@ -151,6 +176,16 @@ export default function QuizApp() {
               >
                 <PlusCircle />
                 <span>New Quiz</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                onClick={() => setActiveView('learning-paths')}
+                isActive={activeView === 'learning-paths' && !questions}
+                tooltip="Learning Paths"
+              >
+                <BookOpenCheck />
+                <span>Learning Paths</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

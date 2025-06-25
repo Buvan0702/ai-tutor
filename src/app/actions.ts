@@ -1,8 +1,9 @@
 'use server';
 import { generateMcq } from '@/ai/flows/generate-mcq';
 import { generateFeedback } from '@/ai/flows/generate-feedback';
+import { generateLearningPath } from '@/ai/flows/generate-learning-path';
 import { db } from '@/lib/firebase';
-import type { QuizResult, UserAnswer } from '@/lib/types';
+import type { QuizResult, UserAnswer, LearningPath } from '@/lib/types';
 import { addDoc, collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 
 export async function generateQuizAction(params: {topic: string, questionCount: number, difficulty: string}) {
@@ -69,6 +70,18 @@ export async function generateFeedbackAction(topic: string, results: UserAnswer[
     } catch (error) {
         console.error('Error generating feedback:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to generate feedback.';
+        return { success: false, error: errorMessage };
+    }
+}
+
+
+export async function generateLearningPathAction(params: { topic: string }) {
+    try {
+        const result = await generateLearningPath({ topic: params.topic });
+        return { success: true, path: result.path };
+    } catch (error) {
+        console.error('Error generating learning path:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to generate learning path.';
         return { success: false, error: errorMessage };
     }
 }

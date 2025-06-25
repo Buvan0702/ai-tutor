@@ -5,7 +5,7 @@ import type { QuizQuestion, UserAnswer, AIFeedback } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, XCircle, Award, RotateCw, Lightbulb, Loader2 } from 'lucide-react';
+import { CheckCircle2, XCircle, Award, RotateCw, Lightbulb, Loader2, Youtube } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { saveQuizResultAction, generateFeedbackAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -28,6 +28,7 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
   const [userAnswers, setUserAnswers] = useState<UserAnswer[]>([]);
   const [feedback, setFeedback] = useState<AIFeedback | null>(null);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
+  const [revealedHints, setRevealedHints] = useState<string[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -57,6 +58,7 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
       setCurrentQuestionIndex(prev => prev + 1);
       setSelectedAnswer(null);
       setIsCorrect(null);
+      setRevealedHints([]);
     } else {
       setIsFinished(true);
       
@@ -87,6 +89,12 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
         setFeedback(feedbackResult.feedback);
       }
       setIsFeedbackLoading(false);
+    }
+  };
+
+  const handleRevealHint = () => {
+    if (currentQuestion.hints && revealedHints.length < currentQuestion.hints.length) {
+      setRevealedHints(prev => [...prev, currentQuestion.hints[prev.length]]);
     }
   };
 
@@ -125,6 +133,20 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
                                 ))}
                             </div>
                         </div>
+                        {feedback.youtubeSearchQueries?.length > 0 && (
+                             <div>
+                                <h4 className="font-semibold mb-2 text-sm flex items-center gap-2"><Youtube /> Helpful Videos:</h4>
+                                <div className="flex flex-wrap gap-2">
+                                    {feedback.youtubeSearchQueries.map((query, i) => (
+                                        <Button asChild key={i} variant="secondary" size="sm" className="bg-secondary/70">
+                                            <a href={`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`} target="_blank" rel="noopener noreferrer">
+                                                {query}
+                                            </a>
+                                        </Button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : (
                     <p className="text-muted-foreground text-sm">Could not load feedback.</p>
@@ -178,13 +200,33 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
               )
             })}
           </div>
-          {selectedAnswer && (isCorrect === false) && currentQuestion.explanation && (
+          
+          {(selectedAnswer && (isCorrect === false) && currentQuestion.explanation) && (
             <Alert className="mt-4 animate-in fade-in-50">
               <Lightbulb className="h-4 w-4" />
               <AlertTitle>Explanation</AlertTitle>
               <AlertDescription>
                 {currentQuestion.explanation}
               </AlertDescription>
+            </Alert>
+          )}
+
+          {selectedAnswer && currentQuestion.hints?.length > 0 && (
+             <Alert className="mt-4 animate-in fade-in-50" variant="default">
+                <Lightbulb className="h-4 w-4" />
+                <AlertTitle>Hints</AlertTitle>
+                <AlertDescription>
+                  <div className="space-y-2">
+                    {revealedHints.map((hint, index) => (
+                      <p key={index} className="text-sm animate-in fade-in-20">{index+1}. {hint}</p>
+                    ))}
+                    {revealedHints.length < currentQuestion.hints.length && (
+                      <Button variant="link" size="sm" className="p-0 h-auto" onClick={handleRevealHint}>
+                        Reveal next hint...
+                      </Button>
+                    )}
+                  </div>
+                </AlertDescription>
             </Alert>
           )}
         </CardContent>

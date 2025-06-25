@@ -21,6 +21,7 @@ const GenerateFeedbackInputSchema = z.object({
 const GenerateFeedbackOutputSchema = z.object({
     feedback: z.string().describe('A friendly, personalized paragraph of feedback for the user based on their performance. Analyze their incorrect answers to find patterns. Congratulate them on what they got right.'),
     suggestions: z.array(z.string()).describe('An array of 2-3 related, more advanced, or foundational topics the user could study next.'),
+    youtubeSearchQueries: z.array(z.string()).describe('A list of 2-3 specific search queries for YouTube to find helpful videos on the topics the user struggled with.'),
 });
 
 export async function generateFeedback(topic: string, results: UserAnswer[]): Promise<AIFeedback> {
@@ -45,6 +46,7 @@ const generateFeedbackPrompt = ai.definePrompt({
     Please analyze their answers and provide:
     1. A single paragraph of personalized, constructive feedback. Start by acknowledging their effort. Point out concepts they seem to have grasped well based on their correct answers. For the incorrect answers, gently explain the underlying concepts they might be struggling with. Do not just list the wrong answers. Be encouraging and supportive.
     2. A list of 2-3 suggestions for related topics to study next. These could be topics that build on the current one, or foundational topics if they struggled.
+    3. A list of 2-3 specific YouTube search queries that would help the user find videos about the concepts they answered incorrectly. For example, if they struggled with React state management, a query could be "React useState hook tutorial".
     `,
     config: {
         safetySettings: [

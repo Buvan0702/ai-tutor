@@ -24,6 +24,7 @@ const GenerateMcqOutputSchema = z.array(z.object({
   options: z.array(z.string()).describe('The options for the question.'),
   correctAnswer: z.string().describe('The correct answer to the question.'),
   explanation: z.string().describe('A brief explanation for the correct answer.'),
+  hints: z.array(z.string()).describe('An array of 2-3 hints for the question. The hints should be progressively more revealing, without giving away the answer directly.'),
 }));
 export type GenerateMcqOutput = z.infer<typeof GenerateMcqOutputSchema>;
 
@@ -41,12 +42,15 @@ const generateMcqPrompt = ai.definePrompt({
   The difficulty level for the questions should be {{difficulty}}.
 
   Each question should have 4 options, with one correct answer.
+  For each question, also provide a concise explanation for the correct answer, and 2-3 progressively revealing hints that guide the user to the correct answer without giving it away.
+
   The output should be a JSON array of questions, where each question has the following format:
   {
   "question": "The question text",
   "options": ["option 1", "option 2", "option 3", "option 4"],
   "correctAnswer": "The correct answer",
-  "explanation": "A concise explanation of why the answer is correct."
+  "explanation": "A concise explanation of why the answer is correct.",
+  "hints": ["Hint 1", "Hint 2", "Hint 3"]
   }
   `,
   config: {

@@ -22,4 +22,12 @@ export interface UserAnswer {
 export interface AIFeedback {
     feedback: string;
     suggestions: string[];
+    youtubeSearchQueries: string[];
 }
+
+export interface LearningPathStep {
+    topic: string;
+    description: string;
+}
+
+export type LearningPath = LearningPathStep[];
