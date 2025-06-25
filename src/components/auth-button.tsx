@@ -1,20 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { signOut, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { signOut, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { LogOut, User as UserIcon, LogIn, Mail, Lock } from 'lucide-react';
 
-const AuthForm = ({ isSignUp }: { isSignUp?: boolean }) => {
+const AuthForm = ({ isSignUp, onForgotPassword }: { isSignUp?: boolean, onForgotPassword?: () => void }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { toast } = useToast();
@@ -65,6 +65,13 @@ const AuthForm = ({ isSignUp }: { isSignUp?: boolean }) => {
           <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input id="password" type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required className="pl-10"/>
         </div>
+        {!isSignUp && onForgotPassword && (
+          <div className="flex items-center justify-end -mt-2">
+            <Button variant="link" size="sm" type="button" className="p-0 h-auto font-normal" onClick={onForgotPassword}>
+              Forgot Password?
+            </Button>
+          </div>
+        )}
         <Button type="submit" className="w-full">{isSignUp ? 'Sign Up' : 'Sign In'}</Button>
       </form>
       <div className="relative">
@@ -83,15 +90,77 @@ const AuthForm = ({ isSignUp }: { isSignUp?: boolean }) => {
   );
 };
 
+const ResetPasswordForm = ({ onBack }: { onBack: () => void }) => {
+    const [email, setEmail] = useState('');
+    const { toast } = useToast();
+
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            await sendPasswordResetEmail(auth, email);
+            toast({
+                title: 'Password Reset Email Sent',
+                description: 'Please check your inbox for a link to reset your password.',
+            });
+            onBack();
+        } catch (error: any) {
+            let description = 'An unknown error occurred.';
+            if (error.code === 'auth/user-not-found') {
+                description = 'No user found with this email address.';
+            }
+            toast({
+                variant: 'destructive',
+                title: 'Request Failed',
+                description: description,
+            });
+        }
+    };
+    
+    return (
+        <div className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                        id="reset-email"
+                        type="email"
+                        placeholder="email@example.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className="pl-10"
+                    />
+                </div>
+                <Button type="submit" className="w-full">
+                    Send Reset Link
+                </Button>
+            </form>
+            <Button variant="outline" className="w-full" onClick={onBack}>
+                Back to Sign In
+            </Button>
+        </div>
+    );
+};
+
 
 export const AuthButton = () => {
   const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  type AuthView = 'signin' | 'signup' | 'reset';
+  const [view, setView] = useState<AuthView>('signin');
   
   const handleSignOut = () => {
     signOut(auth);
   };
   
+  const handleModalOpenChange = (open: boolean) => {
+    setIsModalOpen(open);
+    if (!open) {
+        // Reset to sign-in view after the close animation completes
+        setTimeout(() => setView('signin'), 300);
+    }
+  }
+
   if (user) {
     return (
       <DropdownMenu>
@@ -121,23 +190,37 @@ export const AuthButton = () => {
         <LogIn className="mr-2 h-4 w-4" />
         Sign In
       </Button>
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
         <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle className="text-center text-2xl font-headline">Welcome to Quiz AI</DialogTitle>
-          </DialogHeader>
-          <Tabs defaultValue="signin" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="signin">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            <TabsContent value="signin">
-              <AuthForm />
-            </TabsContent>
-            <TabsContent value="signup">
-              <AuthForm isSignUp />
-            </TabsContent>
-          </Tabs>
+            {view === 'reset' ? (
+                <>
+                    <DialogHeader>
+                        <DialogTitle className="text-center text-2xl font-headline">Reset Password</DialogTitle>
+                        <DialogDescription className="text-center">
+                            Enter your email to receive a reset link.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <ResetPasswordForm onBack={() => setView('signin')} />
+                </>
+            ) : (
+                <>
+                    <DialogHeader>
+                        <DialogTitle className="text-center text-2xl font-headline">Welcome to Quiz AI</DialogTitle>
+                    </DialogHeader>
+                    <Tabs defaultValue={view} value={view} onValueChange={(v) => setView(v as AuthView)} className="w-full">
+                        <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="signin">Sign In</TabsTrigger>
+                        <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                        </TabsList>
+                        <TabsContent value="signin">
+                            <AuthForm onForgotPassword={() => setView('reset')} />
+                        </TabsContent>
+                        <TabsContent value="signup">
+                            <AuthForm isSignUp />
+                        </TabsContent>
+                    </Tabs>
+                </>
+            )}
         </DialogContent>
       </Dialog>
     </>
