@@ -22,6 +22,9 @@ const AuthForm = ({ isSignUp }: { isSignUp?: boolean }) => {
 
   const handleGoogleSignIn = async () => {
     const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({
+      prompt: "select_account"
+    });
     try {
       await signInWithPopup(auth, provider);
     } catch (error: any) {
