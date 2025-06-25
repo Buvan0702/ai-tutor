@@ -18,6 +18,10 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  devIndicators: {
+    buildActivity: false,
+  },
+  transpilePackages: ['three', 'react-globe.gl', 'three-globe', 'three-spritetext'],
 };
 
 export default nextConfig;
