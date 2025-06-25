@@ -1,12 +1,17 @@
 'use server';
 import { generateMcq } from '@/ai/flows/generate-mcq';
+import { generateFeedback } from '@/ai/flows/generate-feedback';
 import { auth, db } from '@/lib/firebase';
-import { QuizResult } from '@/lib/types';
+import type { QuizResult, UserAnswer } from '@/lib/types';
 import { addDoc, collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 
-export async function generateQuizAction(topic: string) {
+export async function generateQuizAction(params: {topic: string, questionCount: number, difficulty: string}) {
   try {
-    const questions = await generateMcq({ topic });
+    const questions = await generateMcq({
+        topic: params.topic,
+        questionCount: params.questionCount,
+        difficulty: params.difficulty,
+    });
     return { success: true, questions };
   } catch (error) {
     console.error('Error generating quiz:', error);
@@ -54,5 +59,16 @@ export async function getPerformanceDataAction() {
     } catch (error) {
         console.error('Error fetching performance data:', error);
         return { success: false, error: 'Failed to fetch performance data.' };
+    }
+}
+
+
+export async function generateFeedbackAction(topic: string, results: UserAnswer[]) {
+    try {
+        const feedback = await generateFeedback(topic, results);
+        return { success: true, feedback };
+    } catch (error) {
+        console.error('Error generating feedback:', error);
+        return { success: false, error: 'Failed to generate feedback.' };
     }
 }

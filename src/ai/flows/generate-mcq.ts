@@ -10,10 +10,12 @@
  */
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import {z} from 'zod';
 
 const GenerateMcqInputSchema = z.object({
   topic: z.string().describe('The programming topic to generate questions for.'),
+  questionCount: z.number().describe('The number of questions to generate.'),
+  difficulty: z.string().describe('The difficulty level for the questions (e.g., Easy, Medium, Hard).'),
 });
 export type GenerateMcqInput = z.infer<typeof GenerateMcqInputSchema>;
 
@@ -35,8 +37,8 @@ const generateMcqPrompt = ai.definePrompt({
   output: {schema: GenerateMcqOutputSchema},
   prompt: `You are a quiz generator that generates multiple choice questions on a given topic.
 
-  Generate 3-5 multiple choice questions on the following topic:
-  {{topic}}
+  Generate {{questionCount}} multiple choice questions on the following topic: "{{topic}}".
+  The difficulty level for the questions should be {{difficulty}}.
 
   Each question should have 4 options, with one correct answer.
   The output should be a JSON array of questions, where each question has the following format:

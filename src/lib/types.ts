@@ -8,4 +8,17 @@ export interface QuizResult {
   score: number;
   totalQuestions: number;
   createdAt: number; // Store as timestamp
+  difficulty: string;
+}
+
+export interface UserAnswer {
+    question: string;
+    selectedAnswer: string;
+    correctAnswer: string;
+    isCorrect: boolean;
+}
+
+export interface AIFeedback {
+    feedback: string;
+    suggestions: string[];
 }

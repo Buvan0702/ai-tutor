@@ -12,15 +12,18 @@ import { useToast } from '@/hooks/use-toast';
 import { generateQuizAction } from '@/app/actions';
 import { Sparkles, Loader2 } from 'lucide-react';
 import type { QuizQuestion } from '@/lib/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 const formSchema = z.object({
   topic: z.string().min(2, 'Topic must be at least 2 characters long.'),
+  questionCount: z.string(),
+  difficulty: z.string(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
 interface QuizCreatorProps {
-  onQuizCreated: (questions: QuizQuestion[], topic: string) => void;
+  onQuizCreated: (questions: QuizQuestion[], topic: string, difficulty: string) => void;
 }
 
 export default function QuizCreator({ onQuizCreated }: QuizCreatorProps) {
@@ -30,12 +33,18 @@ export default function QuizCreator({ onQuizCreated }: QuizCreatorProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       topic: '',
+      questionCount: '5',
+      difficulty: 'Medium'
     },
   });
 
   const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setIsLoading(true);
-    const result = await generateQuizAction(data.topic);
+    const result = await generateQuizAction({
+        topic: data.topic,
+        questionCount: parseInt(data.questionCount, 10),
+        difficulty: data.difficulty,
+    });
     setIsLoading(false);
 
     if (result.success && result.questions) {
@@ -51,7 +60,7 @@ export default function QuizCreator({ onQuizCreated }: QuizCreatorProps) {
         title: 'Quiz Ready!',
         description: `Your quiz on "${data.topic}" has been generated.`,
       });
-      onQuizCreated(result.questions, data.topic);
+      onQuizCreated(result.questions, data.topic, data.difficulty);
     } else {
       toast({
         variant: 'destructive',
@@ -86,6 +95,52 @@ export default function QuizCreator({ onQuizCreated }: QuizCreatorProps) {
                   </FormItem>
                 )}
               />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                    control={form.control}
+                    name="questionCount"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Questions</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Number of questions" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="3">3 Questions</SelectItem>
+                            <SelectItem value="5">5 Questions</SelectItem>
+                            <SelectItem value="10">10 Questions</SelectItem>
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="difficulty"
+                    render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Difficulty</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                            <SelectTrigger>
+                            <SelectValue placeholder="Select difficulty" />
+                            </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                            <SelectItem value="Easy">Easy</SelectItem>
+                            <SelectItem value="Medium">Medium</SelectItem>
+                            <SelectItem value="Hard">Hard</SelectItem>
+                        </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                    )}
+                />
+              </div>
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? (
                   <Loader2 className="animate-spin mr-2" />

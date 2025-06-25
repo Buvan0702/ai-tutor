@@ -13,11 +13,13 @@ export default function QuizApp() {
   const [activeTab, setActiveTab] = useState('new-quiz');
   const [questions, setQuestions] = useState<QuizQuestion[] | null>(null);
   const [quizTopic, setQuizTopic] = useState('');
+  const [quizDifficulty, setQuizDifficulty] = useState('Medium');
   const [quizKey, setQuizKey] = useState(0);
 
-  const handleQuizCreated = (newQuestions: QuizQuestion[], topic: string) => {
+  const handleQuizCreated = (newQuestions: QuizQuestion[], topic: string, difficulty: string) => {
     setQuestions(newQuestions);
     setQuizTopic(topic);
+    setQuizDifficulty(difficulty);
     setQuizKey(prev => prev + 1); // Force re-mount of QuizSession
   };
 
@@ -48,6 +50,7 @@ export default function QuizApp() {
             key={quizKey}
             questions={questions}
             topic={quizTopic}
+            difficulty={quizDifficulty}
             onFinish={handleQuizFinish}
           />
         ) : (
