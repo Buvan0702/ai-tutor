@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { QuizQuestion } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, XCircle, Award, RotateCw } from 'lucide-react';
+import { CheckCircle2, XCircle, Award, RotateCw, Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { saveQuizResultAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface QuizSessionProps {
   questions: QuizQuestion[];
@@ -115,6 +116,15 @@ export default function QuizSession({ questions, topic, onFinish }: QuizSessionP
               )
             })}
           </div>
+          {selectedAnswer && !isCorrect && currentQuestion.explanation && (
+            <Alert className="mt-4 animate-in fade-in-50">
+              <Lightbulb className="h-4 w-4" />
+              <AlertTitle>Explanation</AlertTitle>
+              <AlertDescription>
+                {currentQuestion.explanation}
+              </AlertDescription>
+            </Alert>
+          )}
         </CardContent>
         <CardFooter>
           {selectedAnswer && (

@@ -21,6 +21,7 @@ const GenerateMcqOutputSchema = z.array(z.object({
   question: z.string().describe('The multiple choice question.'),
   options: z.array(z.string()).describe('The options for the question.'),
   correctAnswer: z.string().describe('The correct answer to the question.'),
+  explanation: z.string().describe('A brief explanation for the correct answer.'),
 }));
 export type GenerateMcqOutput = z.infer<typeof GenerateMcqOutputSchema>;
 
@@ -42,7 +43,8 @@ const generateMcqPrompt = ai.definePrompt({
   {
   "question": "The question text",
   "options": ["option 1", "option 2", "option 3", "option 4"],
-  "correctAnswer": "The correct answer"
+  "correctAnswer": "The correct answer",
+  "explanation": "A concise explanation of why the answer is correct."
   }
   `,
 });
