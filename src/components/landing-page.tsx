@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { AuthButton } from '@/components/auth-button';
 import AnimatedBackground from '@/components/animated-background';
 import { BrainCircuit, Zap } from 'lucide-react';
+import { ThemeToggle } from './theme-toggle';
 
 const LandingPage = () => {
   return (
@@ -12,7 +13,10 @@ const LandingPage = () => {
           <BrainCircuit className="h-8 w-8 text-primary" />
           <h1 className="text-2xl font-bold font-headline text-primary">Quiz AI</h1>
         </div>
-        <AuthButton />
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <AuthButton />
+        </div>
       </header>
       <main className="flex-grow flex items-center justify-center">
         <AnimatedBackground />

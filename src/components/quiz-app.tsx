@@ -27,6 +27,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { useAuth } from '@/context/auth-context';
+import { ThemeToggle } from './theme-toggle';
 
 type ActiveView = 'dashboard' | 'new-quiz' | 'learning-paths';
 
@@ -211,7 +212,10 @@ export default function QuizApp() {
               {pageTitle}
             </h1>
           </div>
-          <AuthButton />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <AuthButton />
+          </div>
         </header>
         <main className="flex-grow p-4 md:p-6 overflow-auto" id="printable-area">
           <div className="print-only hidden">
