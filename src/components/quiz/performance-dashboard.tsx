@@ -18,6 +18,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { format } from "date-fns"
+import { useAuth } from '@/context/auth-context';
 
 
 interface PerformanceDashboardProps {
@@ -29,18 +30,23 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz }: Pe
   const [results, setResults] = useState<QuizResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [retryingQuizId, setRetryingQuizId] = useState<string | null>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchData = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
-      const res = await getPerformanceDataAction();
+      const res = await getPerformanceDataAction({ userId: user.uid });
       if (res.success && res.data) {
         setResults(res.data);
       }
       setLoading(false);
     };
     fetchData();
-  }, []);
+  }, [user]);
 
   const handleRetryClick = async (result: QuizResult) => {
     if (!result.id) return;

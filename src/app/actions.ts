@@ -1,7 +1,7 @@
 'use server';
 import { generateMcq } from '@/ai/flows/generate-mcq';
 import { generateFeedback } from '@/ai/flows/generate-feedback';
-import { auth, db } from '@/lib/firebase';
+import { db } from '@/lib/firebase';
 import type { QuizResult, UserAnswer } from '@/lib/types';
 import { addDoc, collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 
@@ -19,16 +19,15 @@ export async function generateQuizAction(params: {topic: string, questionCount: 
   }
 }
 
-export async function saveQuizResultAction(result: Omit<QuizResult, 'id' | 'userId' | 'createdAt'>) {
-    const user = auth.currentUser;
-    if (!user) {
+export async function saveQuizResultAction(result: Omit<QuizResult, 'id' | 'userId' | 'createdAt'>, userId: string) {
+    if (!userId) {
         return { success: false, error: 'User not authenticated.' };
     }
 
     try {
         const docRef = await addDoc(collection(db, 'quizResults'), {
             ...result,
-            userId: user.uid,
+            userId: userId,
             createdAt: Date.now(),
         });
         return { success: true, docId: docRef.id };
@@ -38,16 +37,15 @@ export async function saveQuizResultAction(result: Omit<QuizResult, 'id' | 'user
     }
 }
 
-export async function getPerformanceDataAction() {
-    const user = auth.currentUser;
-    if (!user) {
+export async function getPerformanceDataAction(params: { userId: string }) {
+    if (!params.userId) {
         return { success: false, error: 'User not authenticated.' };
     }
 
     try {
         const q = query(
             collection(db, 'quizResults'), 
-            where('userId', '==', user.uid),
+            where('userId', '==', params.userId),
             orderBy('createdAt', 'asc')
         );
         const querySnapshot = await getDocs(q);

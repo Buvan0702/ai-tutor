@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { saveQuizResultAction, generateFeedbackAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useAuth } from '@/context/auth-context';
 
 interface QuizSessionProps {
   questions: QuizQuestion[];
@@ -28,6 +29,7 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
   const [feedback, setFeedback] = useState<AIFeedback | null>(null);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + (selectedAnswer ? 1 : 0)) / questions.length) * 100;
@@ -57,14 +59,29 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
       setIsCorrect(null);
     } else {
       setIsFinished(true);
-      setIsFeedbackLoading(true);
       
-      await saveQuizResultAction({ topic, score, totalQuestions: questions.length, difficulty });
-      toast({
-        title: 'Quiz Complete!',
-        description: `You scored ${score} out of ${questions.length}. Your result is saved.`,
-      });
+      if (user) {
+        const result = await saveQuizResultAction({ topic, score, totalQuestions: questions.length, difficulty }, user.uid);
+        if(result.success) {
+            toast({
+                title: 'Quiz Complete!',
+                description: `You scored ${score} out of ${questions.length}. Your result is saved.`,
+            });
+        } else {
+            toast({
+                variant: 'destructive',
+                title: 'Error saving result',
+                description: result.error,
+            });
+        }
+      } else {
+        toast({
+            title: 'Quiz Complete!',
+            description: `You scored ${score} out of ${questions.length}. Sign in to save your results.`,
+        });
+      }
 
+      setIsFeedbackLoading(true);
       const feedbackResult = await generateFeedbackAction(topic, userAnswers);
       if (feedbackResult.success && feedbackResult.feedback) {
         setFeedback(feedbackResult.feedback);
