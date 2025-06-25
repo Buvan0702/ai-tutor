@@ -2,8 +2,9 @@
 import { generateMcq } from '@/ai/flows/generate-mcq';
 import { generateFeedback } from '@/ai/flows/generate-feedback';
 import { generateLearningPath } from '@/ai/flows/generate-learning-path';
+import { chatWithTutor } from '@/ai/flows/chat-tutor';
 import { db } from '@/lib/firebase';
-import type { QuizResult, UserAnswer, LearningPath } from '@/lib/types';
+import type { QuizResult, UserAnswer, ChatMessage } from '@/lib/types';
 import { addDoc, collection, getDocs, query, where, orderBy } from 'firebase/firestore';
 
 export async function generateQuizAction(params: {topic: string, questionCount: number, difficulty: string}) {
@@ -82,6 +83,17 @@ export async function generateLearningPathAction(params: { topic: string }) {
     } catch (error) {
         console.error('Error generating learning path:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to generate learning path.';
+        return { success: false, error: errorMessage };
+    }
+}
+
+export async function chatWithTutorAction(params: { topic: string, history: ChatMessage[] }) {
+    try {
+        const response = await chatWithTutor(params.topic, params.history);
+        return { success: true, response };
+    } catch (error) {
+        console.error('Error with AI Tutor:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to get a response from the tutor.';
         return { success: false, error: errorMessage };
     }
 }

@@ -34,3 +34,8 @@ export interface LearningPathStep {
 }
 
 export type LearningPath = LearningPathStep[];
+
+export interface ChatMessage {
+  role: 'user' | 'model';
+  content: string;
+}
