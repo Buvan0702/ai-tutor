@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useForm, type SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -22,20 +22,21 @@ type FormValues = z.infer<typeof formSchema>;
 
 interface LearningPathsProps {
   onStartQuiz: (topic: string) => void;
+  initialTopic?: string;
 }
 
-export default function LearningPaths({ onStartQuiz }: LearningPathsProps) {
+export default function LearningPaths({ onStartQuiz, initialTopic }: LearningPathsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [learningPath, setLearningPath] = useState<LearningPath | null>(null);
   const { toast } = useToast();
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      topic: '',
+      topic: initialTopic || '',
     },
   });
 
-  const onSubmit: SubmitHandler<FormValues> = async (data) => {
+  const onSubmit: SubmitHandler<FormValues> = useCallback(async (data) => {
     setIsLoading(true);
     setLearningPath(null);
     const result = await generateLearningPathAction({ topic: data.topic });
@@ -62,7 +63,17 @@ export default function LearningPaths({ onStartQuiz }: LearningPathsProps) {
         description: result.error || 'An unknown error occurred.',
       });
     }
-  };
+  }, [toast, form]);
+
+  const submittedTopicRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (initialTopic && submittedTopicRef.current !== initialTopic) {
+        form.setValue('topic', initialTopic);
+        form.handleSubmit(onSubmit)();
+        submittedTopicRef.current = initialTopic;
+    }
+  }, [initialTopic, form, onSubmit]);
+
 
   return (
     <div className="space-y-8">

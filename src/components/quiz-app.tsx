@@ -36,6 +36,7 @@ export default function QuizApp() {
   const [quizTopic, setQuizTopic] = useState('');
   const [quizDifficulty, setQuizDifficulty] = useState('Medium');
   const [quizKey, setQuizKey] = useState(0);
+  const [initialTopicForLearningPath, setInitialTopicForLearningPath] = useState<string | undefined>();
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -104,6 +105,16 @@ export default function QuizApp() {
       });
     }
   };
+  
+  const handleGenerateLearningPath = (topic: string) => {
+    setInitialTopicForLearningPath(topic);
+    setActiveView('learning-paths');
+  };
+
+  const changeView = (view: ActiveView) => {
+    setInitialTopicForLearningPath(undefined);
+    setActiveView(view);
+  };
 
   const PageTitle: Record<ActiveView, string> = {
     dashboard: 'Performance Dashboard',
@@ -130,12 +141,13 @@ export default function QuizApp() {
           <PerformanceDashboard
             onStartNewQuiz={startNewQuiz}
             onRetryQuiz={handleRetryQuiz}
+            onGenerateLearningPath={handleGenerateLearningPath}
           />
         );
       case 'new-quiz':
         return <QuizCreator onQuizCreated={handleQuizCreated} />;
       case 'learning-paths':
-        return <LearningPaths onStartQuiz={handleStartQuizFromPath} />;
+        return <LearningPaths onStartQuiz={handleStartQuizFromPath} initialTopic={initialTopicForLearningPath} />;
       default:
         return null;
     }
@@ -160,7 +172,7 @@ export default function QuizApp() {
           <SidebarMenu>
              <SidebarMenuItem>
               <SidebarMenuButton
-                onClick={() => setActiveView('dashboard')}
+                onClick={() => changeView('dashboard')}
                 isActive={activeView === 'dashboard' && !questions}
                 tooltip="Dashboard"
               >
@@ -170,7 +182,7 @@ export default function QuizApp() {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
-                onClick={() => setActiveView('new-quiz')}
+                onClick={() => changeView('new-quiz')}
                 isActive={activeView === 'new-quiz' && !questions}
                 tooltip="New Quiz"
               >
@@ -180,7 +192,7 @@ export default function QuizApp() {
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton
-                onClick={() => setActiveView('learning-paths')}
+                onClick={() => changeView('learning-paths')}
                 isActive={activeView === 'learning-paths' && !questions}
                 tooltip="Learning Paths"
               >

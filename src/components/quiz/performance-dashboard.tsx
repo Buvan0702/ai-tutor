@@ -8,7 +8,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContaine
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
 import { Button } from '../ui/button';
-import { Rocket, RefreshCw, Loader2, FileText, Printer, Clock, CheckCircle2, XCircle, Trophy, TrendingDown } from 'lucide-react';
+import { Rocket, RefreshCw, Loader2, FileText, Printer, Clock, CheckCircle2, XCircle, Trophy, TrendingDown, Dumbbell, BookOpenCheck } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -34,9 +34,10 @@ import { Alert, AlertDescription } from '../ui/alert';
 interface PerformanceDashboardProps {
     onStartNewQuiz: () => void;
     onRetryQuiz: (topic: string, difficulty: string, questionCount: number) => Promise<void>;
+    onGenerateLearningPath: (topic: string) => void;
 }
 
-export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz }: PerformanceDashboardProps) {
+export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGenerateLearningPath }: PerformanceDashboardProps) {
   const [results, setResults] = useState<QuizResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [retryingQuizId, setRetryingQuizId] = useState<string | null>(null);
@@ -63,6 +64,13 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz }: Pe
     if (!result.id) return;
     setRetryingQuizId(result.id);
     await onRetryQuiz(result.topic, result.difficulty, result.totalQuestions);
+    setRetryingQuizId(null);
+  };
+
+  const handlePracticeWeakestTopic = async () => {
+    if (!weakestTopic) return;
+    setRetryingQuizId('practice-weakest');
+    await onRetryQuiz(weakestTopic.topic, 'Easy', 5);
     setRetryingQuizId(null);
   };
 
@@ -102,7 +110,11 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz }: Pe
 
   const weakestTopic = useMemo(() => {
     if (topicPerformance.length < 1) return null;
-    return [...topicPerformance].sort((a,b) => a.accuracy - b.accuracy)[0];
+    const sortedByAccuracy = [...topicPerformance].sort((a, b) => a.accuracy - b.accuracy);
+    if (sortedByAccuracy[0].accuracy < 100) {
+      return sortedByAccuracy[0];
+    }
+    return null;
   }, [topicPerformance]);
 
   const avgTimePerQuestion = useMemo(() => {
@@ -174,10 +186,29 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz }: Pe
               <TrendingDown className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold truncate">{weakestTopic?.topic ?? 'N/A'}</p>
-              <p className="text-xs text-muted-foreground">
-                 {weakestTopic ? `${weakestTopic.accuracy.toFixed(1)}% accuracy` : `Not enough data`}
-              </p>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <p className="text-xl font-bold truncate">{weakestTopic?.topic ?? 'N/A'}</p>
+                        <p className="text-xs text-muted-foreground">
+                            {weakestTopic ? `${weakestTopic.accuracy.toFixed(1)}% accuracy` : `Great work!`}
+                        </p>
+                    </div>
+                    {weakestTopic && (
+                         <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={handlePracticeWeakestTopic}
+                            disabled={retryingQuizId === 'practice-weakest'}
+                        >
+                            {retryingQuizId === 'practice-weakest' ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <Dumbbell className="mr-2 h-4 w-4" />
+                            )}
+                            Practice
+                        </Button>
+                    )}
+                </div>
             </CardContent>
           </Card>
           <Card>
@@ -236,6 +267,24 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz }: Pe
             </CardContent>
         </Card>
       </div>
+
+       {weakestTopic && (
+        <Card className="card-print animate-in fade-in-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <BookOpenCheck /> Recommendation
+            </CardTitle>
+            <CardDescription>
+              You're finding "{weakestTopic.topic}" challenging. Generate a step-by-step learning path to master it.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button onClick={() => onGenerateLearningPath(weakestTopic!.topic)}>
+              Create Learning Path for "{weakestTopic.topic}"
+            </Button>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className='card-print'>
         <CardHeader>
