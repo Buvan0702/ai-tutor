@@ -82,3 +82,38 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .print-only {
+    display: block !important;
+  }
+  
+  /* Ensure cards don't break across pages */
+  .card-print {
+    break-inside: avoid;
+    page-break-inside: avoid;
+    box-shadow: none !important;
+    border: 1px solid #ccc !important;
+  }
+
+  /* Basic report styling */
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+
+  body {
+    background-color: white !important;
+    color: black !important;
+  }
+
+  /* Ensure charts are sized correctly for print */
+  .recharts-responsive-container {
+    width: 100% !important;
+    height: 300px !important; /* Fixed height for printing */
+  }
+}

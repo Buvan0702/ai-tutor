@@ -10,6 +10,8 @@ export interface QuizResult {
   totalQuestions: number;
   createdAt: number; // Store as timestamp
   difficulty: string;
+  timeTaken?: number; // in seconds
+  userAnswers?: UserAnswer[];
 }
 
 export interface UserAnswer {
@@ -17,6 +19,7 @@ export interface UserAnswer {
     selectedAnswer: string;
     correctAnswer: string;
     isCorrect: boolean;
+    explanation: string;
 }
 
 export interface AIFeedback {

@@ -147,7 +147,7 @@ export default function QuizApp() {
 
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar className="no-print">
         <SidebarHeader className="p-4">
           <div className="flex items-center gap-2">
             <BrainCircuit className="h-8 w-8 text-sidebar-primary" />
@@ -192,7 +192,7 @@ export default function QuizApp() {
         </SidebarContent>
       </Sidebar>
       <SidebarInset className="flex flex-col bg-background">
-        <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6">
+        <header className="sticky top-0 z-10 flex h-14 items-center justify-between gap-4 border-b bg-background/80 px-4 backdrop-blur-sm sm:px-6 no-print">
           <div className="flex items-center gap-2">
             <SidebarTrigger className="md:hidden" />
             <h1 className="text-xl font-semibold font-headline text-foreground">
@@ -201,7 +201,11 @@ export default function QuizApp() {
           </div>
           <AuthButton />
         </header>
-        <main className="flex-grow p-4 md:p-6 overflow-auto">
+        <main className="flex-grow p-4 md:p-6 overflow-auto" id="printable-area">
+          <div className="print-only hidden">
+            <h1 className="text-2xl font-bold">Quiz AI Performance Report</h1>
+            <p>{new Date().toLocaleDateString()}</p>
+          </div>
           {renderContent()}
         </main>
       </SidebarInset>

@@ -8,7 +8,7 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContaine
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
 import { Button } from '../ui/button';
-import { Rocket, RefreshCw, Loader2 } from 'lucide-react';
+import { Rocket, RefreshCw, Loader2, FileText, Printer, Clock, CheckCircle2, XCircle, Trophy, TrendingDown } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -19,6 +19,16 @@ import {
 } from "@/components/ui/table"
 import { format } from "date-fns"
 import { useAuth } from '@/context/auth-context';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+import { ScrollArea } from '../ui/scroll-area';
+import { Separator } from '../ui/separator';
+import { cn } from '@/lib/utils';
+import { Alert, AlertDescription } from '../ui/alert';
 
 
 interface PerformanceDashboardProps {
@@ -30,6 +40,7 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz }: Pe
   const [results, setResults] = useState<QuizResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [retryingQuizId, setRetryingQuizId] = useState<string | null>(null);
+  const [reviewingResult, setReviewingResult] = useState<QuizResult | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -84,10 +95,25 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz }: Pe
     if (results.length === 0) return 0;
     const totalScore = results.reduce((sum, r) => sum + r.score, 0);
     const totalQuestions = results.reduce((sum, r) => sum + r.totalQuestions, 0);
-    return (totalScore / totalQuestions) * 100;
+    return totalQuestions > 0 ? (totalScore / totalQuestions) * 100 : 0;
   }, [results]);
   
   const sortedResults = useMemo(() => results.slice().reverse(), [results]);
+
+  const weakestTopic = useMemo(() => {
+    if (topicPerformance.length < 1) return null;
+    return [...topicPerformance].sort((a,b) => a.accuracy - b.accuracy)[0];
+  }, [topicPerformance]);
+
+  const avgTimePerQuestion = useMemo(() => {
+      const resultsWithTime = results.filter(r => typeof r.timeTaken === 'number');
+      if (resultsWithTime.length === 0) return 0;
+      const totalTime = resultsWithTime.reduce((sum, r) => sum + r.timeTaken!, 0);
+      const totalQuestions = resultsWithTime.reduce((sum, r) => sum + r.totalQuestions, 0);
+      if (totalQuestions === 0) return 0;
+      const avg = totalTime / totalQuestions;
+      return avg;
+  }, [results]);
 
   if (loading) {
     return (
@@ -105,85 +131,113 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz }: Pe
         <div className="text-center py-20">
             <h2 className="text-2xl font-headline mb-2">No quiz history yet!</h2>
             <p className="text-muted-foreground mb-4">Take your first quiz to see your performance stats here.</p>
-            <Button onClick={onStartNewQuiz}><Rocket className="mr-2"/> Start a Quiz</Button>
+            <Button onClick={onStartNewQuiz} className="no-print"><Rocket className="mr-2"/> Start a Quiz</Button>
         </div>
     )
   }
 
   return (
     <div className="mt-6 space-y-6">
-       <div className="grid gap-6 md:grid-cols-3">
+       <div className="flex justify-between items-center no-print">
+            <h2 className="text-2xl font-headline">Dashboard Overview</h2>
+            <Button onClick={() => window.print()}>
+                <Printer className="mr-2" /> Download Report
+            </Button>
+        </div>
+
+       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 card-print">
           <Card>
-            <CardHeader>
-              <CardTitle>Overall Accuracy</CardTitle>
-              <CardDescription>Across all quizzes taken.</CardDescription>
+            <CardHeader className='flex-row items-center justify-between pb-2'>
+              <CardTitle className='text-sm font-medium'>Overall Accuracy</CardTitle>
+              <Trophy className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-4xl font-bold">{overallAccuracy.toFixed(1)}%</p>
+              <p className="text-2xl font-bold">{overallAccuracy.toFixed(1)}%</p>
+              <p className="text-xs text-muted-foreground">Across all {results.length} quizzes</p>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader>
-              <CardTitle>Quizzes Taken</CardTitle>
-              <CardDescription>Total number of quizzes completed.</CardDescription>
+            <CardHeader className='flex-row items-center justify-between pb-2'>
+              <CardTitle className='text-sm font-medium'>Best Topic</CardTitle>
+              <Trophy className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-4xl font-bold">{results.length}</p>
+              <p className="text-2xl font-bold truncate">{topicPerformance[0]?.topic ?? 'N/A'}</p>
+              <p className="text-xs text-muted-foreground">
+                {topicPerformance[0] ? `${topicPerformance[0].accuracy.toFixed(1)}% accuracy` : ` `}
+              </p>
             </CardContent>
           </Card>
-           <Card>
-            <CardHeader>
-              <CardTitle>Best Topic</CardTitle>
-              <CardDescription>Your highest performing category.</CardDescription>
+          <Card>
+            <CardHeader className='flex-row items-center justify-between pb-2'>
+              <CardTitle className='text-sm font-medium'>Weakest Topic</CardTitle>
+              <TrendingDown className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold truncate">{topicPerformance[0]?.topic ?? 'N/A'}</p>
+              <p className="text-2xl font-bold truncate">{weakestTopic?.topic ?? 'N/A'}</p>
+              <p className="text-xs text-muted-foreground">
+                 {weakestTopic ? `${weakestTopic.accuracy.toFixed(1)}% accuracy` : `Not enough data`}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className='flex-row items-center justify-between pb-2'>
+              <CardTitle className='text-sm font-medium'>Avg. Time / Q</CardTitle>
+              <Clock className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <p className="text-2xl font-bold truncate">{avgTimePerQuestion > 0 ? `${avgTimePerQuestion.toFixed(1)}s` : 'N/A'}</p>
+              <p className="text-xs text-muted-foreground">
+                {avgTimePerQuestion > 0 ? 'Average time per question' : 'No time data yet'}
+              </p>
             </CardContent>
           </Card>
        </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Performance Over Time</CardTitle>
-          <CardDescription>Your quiz accuracy over your last attempts.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={{}} className="h-80 w-full">
-            <ResponsiveContainer>
-              <LineChart data={performanceOverTime}>
-                <CartesianGrid vertical={false} />
-                <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8}/>
-                <YAxis unit="%" />
-                <Tooltip content={<ChartTooltipContent />} />
-                <Legend />
-                <Line type="monotone" dataKey="accuracy" stroke="var(--color-primary)" strokeWidth={2} dot={false} />
-              </LineChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Topic Performance</CardTitle>
-          <CardDescription>Your average accuracy for each topic.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={{}} className="h-80 w-full">
-            <ResponsiveContainer>
-              <BarChart data={topicPerformance} layout="vertical">
-                <CartesianGrid horizontal={false} />
-                <XAxis type="number" unit="%" />
-                <YAxis type="category" dataKey="topic" width={120} tickLine={false} axisLine={false} />
-                <Tooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="accuracy" fill="var(--color-accent)" radius={[0, 4, 4, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </ChartContainer>
-        </CardContent>
-      </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className='card-print'>
+            <CardHeader>
+            <CardTitle>Performance Over Time</CardTitle>
+            <CardDescription>Your quiz accuracy over your last attempts.</CardDescription>
+            </CardHeader>
+            <CardContent>
+            <ChartContainer config={{}} className="h-80 w-full">
+                <ResponsiveContainer>
+                <LineChart data={performanceOverTime}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="date" tickLine={false} axisLine={false} tickMargin={8}/>
+                    <YAxis unit="%" domain={[0,100]} />
+                    <Tooltip content={<ChartTooltipContent />} />
+                    <Legend />
+                    <Line type="monotone" dataKey="accuracy" stroke="var(--color-primary)" strokeWidth={2} dot={false} />
+                </LineChart>
+                </ResponsiveContainer>
+            </ChartContainer>
+            </CardContent>
+        </Card>
+        
+        <Card className='card-print'>
+            <CardHeader>
+            <CardTitle>Topic Performance</CardTitle>
+            <CardDescription>Your average accuracy for each topic.</CardDescription>
+            </CardHeader>
+            <CardContent>
+            <ChartContainer config={{}} className="h-80 w-full">
+                <ResponsiveContainer>
+                <BarChart data={topicPerformance} layout="vertical" margin={{left: 20}}>
+                    <CartesianGrid horizontal={false} />
+                    <XAxis type="number" unit="%" domain={[0,100]}/>
+                    <YAxis type="category" dataKey="topic" width={100} tickLine={false} axisLine={false} />
+                    <Tooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="accuracy" fill="var(--color-accent)" radius={[0, 4, 4, 0]} />
+                </BarChart>
+                </ResponsiveContainer>
+            </ChartContainer>
+            </CardContent>
+        </Card>
+      </div>
 
-      <Card>
+      <Card className='card-print'>
         <CardHeader>
             <CardTitle>Quiz History</CardTitle>
             <CardDescription>A log of your most recent quizzes.</CardDescription>
@@ -196,7 +250,7 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz }: Pe
                         <TableHead>Difficulty</TableHead>
                         <TableHead>Score</TableHead>
                         <TableHead>Date</TableHead>
-                        <TableHead className="text-right">Action</TableHead>
+                        <TableHead className="text-right no-print">Actions</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -206,13 +260,22 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz }: Pe
                             <TableCell>{result.difficulty}</TableCell>
                             <TableCell>{result.score} / {result.totalQuestions}</TableCell>
                             <TableCell>{format(new Date(result.createdAt), "PP")}</TableCell>
-                            <TableCell className="text-right">
+                            <TableCell className="text-right no-print">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setReviewingResult(result)}
+                                    disabled={!result.userAnswers}
+                                >
+                                    <FileText className="h-4 w-4 mr-2" /> View
+                                </Button>
                                 <Button 
                                     variant="ghost" 
                                     size="icon"
                                     onClick={() => handleRetryClick(result)}
                                     disabled={retryingQuizId === result.id}
                                     aria-label="Retry quiz"
+                                    className='ml-2'
                                 >
                                     {retryingQuizId === result.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                                 </Button>
@@ -223,6 +286,41 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz }: Pe
             </Table>
         </CardContent>
       </Card>
+      
+      {reviewingResult && (
+        <Dialog open={!!reviewingResult} onOpenChange={(isOpen) => !isOpen && setReviewingResult(null)}>
+            <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle>Reviewing Quiz: "{reviewingResult.topic}"</DialogTitle>
+                    <CardDescription>Taken on {format(new Date(reviewingResult.createdAt), "PPP")} - Score: {reviewingResult.score}/{reviewingResult.totalQuestions}</CardDescription>
+                </DialogHeader>
+                <ScrollArea className='h-[60vh]'>
+                    <div className='p-6 space-y-6'>
+                    {reviewingResult.userAnswers?.map((answer, index) => (
+                        <div key={index}>
+                            <p className='font-semibold'>{index + 1}. {answer.question}</p>
+                            <div className='mt-2 space-y-2'>
+                                <div className={cn('p-2 rounded-md border text-sm', answer.isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50')}>
+                                    Your answer: {answer.selectedAnswer}
+                                </div>
+                                {!answer.isCorrect && (
+                                    <Alert variant={answer.isCorrect ? 'default' : 'destructive'}>
+                                        {answer.isCorrect ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                                        <AlertDescription>
+                                            <span className='font-semibold'>Correct answer:</span> {answer.correctAnswer}
+                                            <Separator className='my-2' />
+                                            {answer.explanation}
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                    </div>
+                </ScrollArea>
+            </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

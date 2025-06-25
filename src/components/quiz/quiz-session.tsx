@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { QuizQuestion, UserAnswer, AIFeedback } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,8 +29,13 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
   const [feedback, setFeedback] = useState<AIFeedback | null>(null);
   const [isFeedbackLoading, setIsFeedbackLoading] = useState(false);
   const [revealedHints, setRevealedHints] = useState<string[]>([]);
+  const [startTime, setStartTime] = useState<number>(0);
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  useEffect(() => {
+    setStartTime(Date.now());
+  }, []);
 
   const currentQuestion = questions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + (selectedAnswer ? 1 : 0)) / questions.length) * 100;
@@ -49,6 +54,7 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
         selectedAnswer: option,
         correctAnswer: currentQuestion.correctAnswer,
         isCorrect: correct,
+        explanation: currentQuestion.explanation,
     };
     setUserAnswers(prev => [...prev, answer]);
   };
@@ -61,9 +67,17 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
       setRevealedHints([]);
     } else {
       setIsFinished(true);
+      const timeTaken = Math.round((Date.now() - startTime) / 1000);
       
       if (user) {
-        const result = await saveQuizResultAction({ topic, score, totalQuestions: questions.length, difficulty }, user.uid);
+        const result = await saveQuizResultAction({ 
+            topic, 
+            score, 
+            totalQuestions: questions.length, 
+            difficulty,
+            timeTaken,
+            userAnswers 
+        }, user.uid);
         if(result.success) {
             toast({
                 title: 'Quiz Complete!',
@@ -211,7 +225,7 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
             </Alert>
           )}
 
-          {selectedAnswer && currentQuestion.hints?.length > 0 && (
+          {!selectedAnswer && currentQuestion.hints?.length > 0 && (
              <Alert className="mt-4 animate-in fade-in-50" variant="default">
                 <Lightbulb className="h-4 w-4" />
                 <AlertTitle>Hints</AlertTitle>
