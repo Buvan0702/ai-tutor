@@ -298,6 +298,7 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGe
                         <TableHead>Topic</TableHead>
                         <TableHead>Difficulty</TableHead>
                         <TableHead>Score</TableHead>
+                        <TableHead>Time</TableHead>
                         <TableHead>Date</TableHead>
                         <TableHead className="text-right no-print">Actions</TableHead>
                     </TableRow>
@@ -308,6 +309,7 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGe
                             <TableCell className="font-medium">{result.topic}</TableCell>
                             <TableCell>{result.difficulty}</TableCell>
                             <TableCell>{result.score} / {result.totalQuestions}</TableCell>
+                            <TableCell>{result.timeTaken ? `${result.timeTaken}s` : 'N/A'}</TableCell>
                             <TableCell>{format(new Date(result.createdAt), "PP")}</TableCell>
                             <TableCell className="text-right no-print">
                                 <Button
@@ -341,7 +343,10 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGe
             <DialogContent className="max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>Reviewing Quiz: "{reviewingResult.topic}"</DialogTitle>
-                    <CardDescription>Taken on {format(new Date(reviewingResult.createdAt), "PPP")} - Score: {reviewingResult.score}/{reviewingResult.totalQuestions}</CardDescription>
+                    <CardDescription>
+                        Taken on {format(new Date(reviewingResult.createdAt), "PPP")} - Score: {reviewingResult.score}/{reviewingResult.totalQuestions}
+                        {reviewingResult.timeTaken && ` - Time: ${Math.floor(reviewingResult.timeTaken / 60)}m ${reviewingResult.timeTaken % 60}s`}
+                    </CardDescription>
                 </DialogHeader>
                 <ScrollArea className='h-[60vh]'>
                     <div className='p-6 space-y-6'>
@@ -373,3 +378,5 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGe
     </div>
   );
 }
+
+    
