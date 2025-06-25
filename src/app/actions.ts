@@ -19,7 +19,7 @@ export async function generateQuizAction(params: {topic: string, questionCount: 
   }
 }
 
-export async function saveQuizResultAction(result: Omit<QuizResult, 'userId' | 'createdAt'>) {
+export async function saveQuizResultAction(result: Omit<QuizResult, 'id' | 'userId' | 'createdAt'>) {
     const user = auth.currentUser;
     if (!user) {
         return { success: false, error: 'User not authenticated.' };
@@ -53,7 +53,7 @@ export async function getPerformanceDataAction() {
         const querySnapshot = await getDocs(q);
         const results: QuizResult[] = [];
         querySnapshot.forEach((doc) => {
-            results.push(doc.data() as QuizResult);
+            results.push({ id: doc.id, ...doc.data() } as QuizResult);
         });
         return { success: true, data: results };
     } catch (error) {

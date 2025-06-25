@@ -8,13 +8,16 @@ import QuizCreator from './quiz/quiz-creator';
 import PerformanceDashboard from './quiz/performance-dashboard';
 import QuizSession from './quiz/quiz-session';
 import type { QuizQuestion } from '@/lib/types';
+import { generateQuizAction } from '@/app/actions';
+import { useToast } from '@/hooks/use-toast';
 
 export default function QuizApp() {
-  const [activeTab, setActiveTab] = useState('new-quiz');
+  const [activeTab, setActiveTab] = useState('dashboard');
   const [questions, setQuestions] = useState<QuizQuestion[] | null>(null);
   const [quizTopic, setQuizTopic] = useState('');
   const [quizDifficulty, setQuizDifficulty] = useState('Medium');
   const [quizKey, setQuizKey] = useState(0);
+  const { toast } = useToast();
 
   const handleQuizCreated = (newQuestions: QuizQuestion[], topic: string, difficulty: string) => {
     setQuestions(newQuestions);
@@ -33,6 +36,24 @@ export default function QuizApp() {
     setQuestions(null);
     setQuizTopic('');
     setActiveTab('new-quiz');
+  };
+
+  const handleRetryQuiz = async (topic: string, difficulty: string, questionCount: number) => {
+    const result = await generateQuizAction({
+      topic,
+      questionCount,
+      difficulty,
+    });
+
+    if (result.success && result.questions && result.questions.length > 0) {
+      handleQuizCreated(result.questions, topic, difficulty);
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to Retry Quiz',
+        description: result.error || 'Could not generate questions for this topic.',
+      });
+    }
   };
 
   return (
@@ -67,7 +88,7 @@ export default function QuizApp() {
               <QuizCreator onQuizCreated={handleQuizCreated} />
             </TabsContent>
             <TabsContent value="dashboard">
-              <PerformanceDashboard onStartNewQuiz={startNewQuiz} />
+              <PerformanceDashboard onStartNewQuiz={startNewQuiz} onRetryQuiz={handleRetryQuiz} />
             </TabsContent>
           </Tabs>
         )}

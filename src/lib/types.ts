@@ -3,6 +3,7 @@ import type { GenerateMcqOutput } from '@/ai/flows/generate-mcq';
 export type QuizQuestion = GenerateMcqOutput[number];
 
 export interface QuizResult {
+  id?: string;
   userId: string;
   topic: string;
   score: number;

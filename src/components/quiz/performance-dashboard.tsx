@@ -8,15 +8,27 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContaine
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart';
 import { Skeleton } from '../ui/skeleton';
 import { Button } from '../ui/button';
-import { Rocket } from 'lucide-react';
+import { Rocket, RefreshCw, Loader2 } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
+import { format } from "date-fns"
+
 
 interface PerformanceDashboardProps {
     onStartNewQuiz: () => void;
+    onRetryQuiz: (topic: string, difficulty: string, questionCount: number) => Promise<void>;
 }
 
-export default function PerformanceDashboard({ onStartNewQuiz }: PerformanceDashboardProps) {
+export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz }: PerformanceDashboardProps) {
   const [results, setResults] = useState<QuizResult[]>([]);
   const [loading, setLoading] = useState(true);
+  const [retryingQuizId, setRetryingQuizId] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,6 +41,13 @@ export default function PerformanceDashboard({ onStartNewQuiz }: PerformanceDash
     };
     fetchData();
   }, []);
+
+  const handleRetryClick = async (result: QuizResult) => {
+    if (!result.id) return;
+    setRetryingQuizId(result.id);
+    await onRetryQuiz(result.topic, result.difficulty, result.totalQuestions);
+    setRetryingQuizId(null);
+  };
 
   const performanceOverTime = useMemo(() => {
     return results.map(r => ({
@@ -61,6 +80,8 @@ export default function PerformanceDashboard({ onStartNewQuiz }: PerformanceDash
     const totalQuestions = results.reduce((sum, r) => sum + r.totalQuestions, 0);
     return (totalScore / totalQuestions) * 100;
   }, [results]);
+  
+  const sortedResults = useMemo(() => results.slice().reverse(), [results]);
 
   if (loading) {
     return (
@@ -68,6 +89,7 @@ export default function PerformanceDashboard({ onStartNewQuiz }: PerformanceDash
             <Skeleton className="h-40" />
             <Skeleton className="h-80 md:col-span-2" />
             <Skeleton className="h-80 md:col-span-2" />
+            <Skeleton className="h-60 w-full md:col-span-3" />
         </div>
     )
   }
@@ -152,6 +174,47 @@ export default function PerformanceDashboard({ onStartNewQuiz }: PerformanceDash
               </BarChart>
             </ResponsiveContainer>
           </ChartContainer>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+            <CardTitle>Quiz History</CardTitle>
+            <CardDescription>A log of your most recent quizzes.</CardDescription>
+        </CardHeader>
+        <CardContent>
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Topic</TableHead>
+                        <TableHead>Difficulty</TableHead>
+                        <TableHead>Score</TableHead>
+                        <TableHead>Date</TableHead>
+                        <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {sortedResults.map((result) => (
+                        <TableRow key={result.id}>
+                            <TableCell className="font-medium">{result.topic}</TableCell>
+                            <TableCell>{result.difficulty}</TableCell>
+                            <TableCell>{result.score} / {result.totalQuestions}</TableCell>
+                            <TableCell>{format(new Date(result.createdAt), "PP")}</TableCell>
+                            <TableCell className="text-right">
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon"
+                                    onClick={() => handleRetryClick(result)}
+                                    disabled={retryingQuizId === result.id}
+                                    aria-label="Retry quiz"
+                                >
+                                    {retryingQuizId === result.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                </Button>
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
         </CardContent>
       </Card>
     </div>
