@@ -49,6 +49,26 @@ const generateMcqPrompt = ai.definePrompt({
   "explanation": "A concise explanation of why the answer is correct."
   }
   `,
+  config: {
+    safetySettings: [
+      {
+        category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+        threshold: 'BLOCK_ONLY_HIGH',
+      },
+      {
+        category: 'HARM_CATEGORY_HATE_SPEECH',
+        threshold: 'BLOCK_ONLY_HIGH',
+      },
+      {
+        category: 'HARM_CATEGORY_HARASSMENT',
+        threshold: 'BLOCK_ONLY_HIGH',
+      },
+      {
+        category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+        threshold: 'BLOCK_ONLY_HIGH',
+      },
+    ],
+  },
 });
 
 const generateMcqFlow = ai.defineFlow(
@@ -59,6 +79,9 @@ const generateMcqFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await generateMcqPrompt(input);
-    return output!;
+    if (!output) {
+      throw new Error('The AI failed to generate questions. This could be due to the topic being too sensitive or unsupported. Please try a different topic.');
+    }
+    return output;
   }
 );

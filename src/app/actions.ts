@@ -15,7 +15,8 @@ export async function generateQuizAction(params: {topic: string, questionCount: 
     return { success: true, questions };
   } catch (error) {
     console.error('Error generating quiz:', error);
-    return { success: false, error: 'Failed to generate quiz. Please try again.' };
+    const errorMessage = error instanceof Error ? error.message : 'Failed to generate quiz. Please try again.';
+    return { success: false, error: errorMessage };
   }
 }
 
@@ -67,6 +68,7 @@ export async function generateFeedbackAction(topic: string, results: UserAnswer[
         return { success: true, feedback };
     } catch (error) {
         console.error('Error generating feedback:', error);
-        return { success: false, error: 'Failed to generate feedback.' };
+        const errorMessage = error instanceof Error ? error.message : 'Failed to generate feedback.';
+        return { success: false, error: errorMessage };
     }
 }

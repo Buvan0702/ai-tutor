@@ -46,6 +46,26 @@ const generateFeedbackPrompt = ai.definePrompt({
     1. A single paragraph of personalized, constructive feedback. Start by acknowledging their effort. Point out concepts they seem to have grasped well based on their correct answers. For the incorrect answers, gently explain the underlying concepts they might be struggling with. Do not just list the wrong answers. Be encouraging and supportive.
     2. A list of 2-3 suggestions for related topics to study next. These could be topics that build on the current one, or foundational topics if they struggled.
     `,
+    config: {
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_ONLY_HIGH',
+          },
+          {
+            category: 'HARM_CATEGORY_HATE_SPEECH',
+            threshold: 'BLOCK_ONLY_HIGH',
+          },
+          {
+            category: 'HARM_CATEGORY_HARASSMENT',
+            threshold: 'BLOCK_ONLY_HIGH',
+          },
+          {
+            category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+            threshold: 'BLOCK_ONLY_HIGH',
+          },
+        ],
+    },
 });
 
 const generateFeedbackFlow = ai.defineFlow(
@@ -56,6 +76,9 @@ const generateFeedbackFlow = ai.defineFlow(
     },
     async (input) => {
         const { output } = await generateFeedbackPrompt(input);
-        return output!;
+        if (!output) {
+            throw new Error('The AI failed to generate feedback for this quiz.');
+        }
+        return output;
     }
 );
