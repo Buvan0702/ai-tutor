@@ -8,8 +8,8 @@ import type { UserAnswer, AIFeedback } from '@/lib/types';
 
 const UserAnswerSchema = z.object({
     question: z.string(),
-    selectedAnswer: z.string(),
-    correctAnswer: z.string(),
+    selectedAnswers: z.array(z.string()),
+    correctAnswers: z.array(z.string()),
     isCorrect: z.boolean(),
     explanation: z.string(),
 });
@@ -40,8 +40,8 @@ const generateFeedbackPrompt = ai.definePrompt({
     Here are their results:
     {{#each results}}
     - Question: "{{question}}"
-      - Their Answer: "{{selectedAnswer}}" ({{#if isCorrect}}Correct{{else}}Incorrect{{/if}})
-      - Correct Answer: "{{correctAnswer}}"
+      - Their Answer(s): "{{#each selectedAnswers}}{{.}}{{#unless @last}}, {{/unless}}{{/each}}" ({{#if isCorrect}}Correct{{else}}Incorrect{{/if}})
+      - Correct Answer(s): "{{#each correctAnswers}}{{.}}{{#unless @last}}, {{/unless}}{{/each}}"
       {{#unless isCorrect}}
       - Explanation for the correct answer: "{{explanation}}"
       {{/unless}}

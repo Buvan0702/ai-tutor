@@ -355,13 +355,13 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGe
                             <p className='font-semibold'>{index + 1}. {answer.question}</p>
                             <div className='mt-2 space-y-2'>
                                 <div className={cn('p-2 rounded-md border text-sm', answer.isCorrect ? 'border-success/50 bg-success/10 text-success' : 'border-destructive/50 bg-destructive/10 text-destructive')}>
-                                    Your answer: {answer.selectedAnswer}
+                                    Your answer: {answer.selectedAnswers.join(', ')}
                                 </div>
                                 {!answer.isCorrect && (
                                     <Alert variant={answer.isCorrect ? 'default' : 'destructive'}>
                                         {answer.isCorrect ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
                                         <AlertDescription>
-                                            <span className='font-semibold'>Correct answer:</span> {answer.correctAnswer}
+                                            <span className='font-semibold'>Correct answer:</span> {answer.correctAnswers.join(', ')}
                                             <Separator className='my-2' />
                                             {answer.explanation}
                                         </AlertDescription>

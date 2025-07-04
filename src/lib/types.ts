@@ -16,8 +16,8 @@ export interface QuizResult {
 
 export interface UserAnswer {
     question: string;
-    selectedAnswer: string;
-    correctAnswer: string;
+    selectedAnswers: string[];
+    correctAnswers: string[];
     isCorrect: boolean;
     explanation: string;
 }

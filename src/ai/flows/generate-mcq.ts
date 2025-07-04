@@ -19,13 +19,16 @@ const GenerateMcqInputSchema = z.object({
 });
 export type GenerateMcqInput = z.infer<typeof GenerateMcqInputSchema>;
 
-const GenerateMcqOutputSchema = z.array(z.object({
-  question: z.string().describe('The multiple choice question.'),
+const QuestionSchema = z.object({
+  question: z.string().describe('The question text. For code-snippet questions, this should ONLY be the raw code block.'),
+  questionType: z.enum(['multiple-choice', 'multiple-answer', 'code-snippet']).describe("The type of question being generated."),
   options: z.array(z.string()).describe('The options for the question.'),
-  correctAnswer: z.string().describe('The correct answer to the question.'),
-  explanation: z.string().describe('A brief explanation for the correct answer.'),
+  correctAnswers: z.array(z.string()).describe('An array of correct answers. For multiple-choice and code-snippet questions, this will have only one answer. For multiple-answer, it can have one or more.'),
+  explanation: z.string().describe('A brief explanation for the correct answer(s).'),
   hints: z.array(z.string()).describe('An array of 2-3 hints for the question. The hints should be progressively more revealing, without giving away the answer directly.'),
-}));
+});
+
+const GenerateMcqOutputSchema = z.array(QuestionSchema);
 export type GenerateMcqOutput = z.infer<typeof GenerateMcqOutputSchema>;
 
 export async function generateMcq(input: GenerateMcqInput): Promise<GenerateMcqOutput> {
@@ -36,22 +39,21 @@ const generateMcqPrompt = ai.definePrompt({
   name: 'generateMcqPrompt',
   input: {schema: GenerateMcqInputSchema},
   output: {schema: GenerateMcqOutputSchema},
-  prompt: `You are a quiz generator that generates multiple choice questions on a given topic.
+  prompt: `You are a quiz generator that creates questions on programming topics.
 
-  Generate {{questionCount}} multiple choice questions on the following topic: "{{topic}}".
+  Generate {{questionCount}} questions on the following topic: "{{topic}}".
   The difficulty level for the questions should be {{difficulty}}.
 
-  Each question should have 4 options, with one correct answer.
-  For each question, also provide a concise explanation for the correct answer, and 2-3 progressively revealing hints that guide the user to the correct answer without giving it away.
+  Please generate a mix of the following question types:
+  1. 'multiple-choice': A standard question with only one correct answer.
+  2. 'multiple-answer': A question where one or more options are correct. The user must select all correct options.
+  3. 'code-snippet': A question based on a block of code. The 'question' field should ONLY contain the raw code. The options should be potential outputs, error descriptions, or explanations. This type must have only one correct answer.
 
-  The output should be a JSON array of questions, where each question has the following format:
-  {
-  "question": "The question text",
-  "options": ["option 1", "option 2", "option 3", "option 4"],
-  "correctAnswer": "The correct answer",
-  "explanation": "A concise explanation of why the answer is correct.",
-  "hints": ["Hint 1", "Hint 2", "Hint 3"]
-  }
+  For each question:
+  - It should have 4 options.
+  - The 'correctAnswers' field must be an array containing all correct options. For 'multiple-choice' and 'code-snippet' types, this array will contain exactly one string. For 'multiple-answer', it can contain one or more.
+  - Provide a concise explanation for the correct answer(s).
+  - Provide 2-3 progressively revealing hints.
   `,
   config: {
     safetySettings: [

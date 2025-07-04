@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import type { QuizQuestion, UserAnswer, AIFeedback } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -13,6 +13,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/context/auth-context';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ChatTutor } from '../chat-tutor';
+import { Checkbox } from '../ui/checkbox';
+import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
 
 interface QuizSessionProps {
   questions: QuizQuestion[];
@@ -21,9 +23,21 @@ interface QuizSessionProps {
   onFinish: () => void;
 }
 
+function arraysEqual(a1: string[], a2: string[]) {
+    if (a1.length !== a2.length) return false;
+    const sortedA1 = [...a1].sort();
+    const sortedA2 = [...a2].sort();
+    for (let i = 0; i < sortedA1.length; i++) {
+        if (sortedA1[i] !== sortedA2[i]) return false;
+    }
+    return true;
+}
+
+
 export default function QuizSession({ questions, topic, difficulty, onFinish }: QuizSessionProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null);
+  const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
+  const [answerChecked, setAnswerChecked] = useState(false);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
   const [score, setScore] = useState(0);
   const [isFinished, setIsFinished] = useState(false);
@@ -41,33 +55,49 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
   }, []);
 
   const currentQuestion = questions[currentQuestionIndex];
-  const progress = ((currentQuestionIndex + (selectedAnswer ? 1 : 0)) / questions.length) * 100;
+  const progress = useMemo(() => {
+    return ((currentQuestionIndex + (answerChecked ? 1 : 0)) / questions.length) * 100;
+  }, [currentQuestionIndex, answerChecked, questions.length]);
 
-  const handleAnswerSelect = (option: string) => {
-    if (selectedAnswer) return;
+  const handleSelectionChange = (option: string, checked: boolean) => {
+    if (answerChecked) return;
 
-    const correct = option === currentQuestion.correctAnswer;
-    setSelectedAnswer(option);
+    if (currentQuestion.questionType !== 'multiple-answer') {
+        setSelectedAnswers([option]);
+    } else {
+        setSelectedAnswers(prev => 
+            checked ? [...prev, option] : prev.filter(o => o !== option)
+        );
+    }
+  };
+
+  const handleCheckAnswer = () => {
+    if (answerChecked || selectedAnswers.length === 0) return;
+
+    const correct = arraysEqual(selectedAnswers, currentQuestion.correctAnswers);
     setIsCorrect(correct);
     if (correct) {
       setScore(prev => prev + 1);
     }
     const answer: UserAnswer = {
         question: currentQuestion.question,
-        selectedAnswer: option,
-        correctAnswer: currentQuestion.correctAnswer,
+        selectedAnswers: selectedAnswers,
+        correctAnswers: currentQuestion.correctAnswers,
         isCorrect: correct,
         explanation: currentQuestion.explanation,
     };
     setUserAnswers(prev => [...prev, answer]);
+    setAnswerChecked(true);
   };
+
 
   const handleNext = async () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
-      setSelectedAnswer(null);
+      setSelectedAnswers([]);
       setIsCorrect(null);
       setRevealedHints([]);
+      setAnswerChecked(false);
     } else {
       setIsFinished(true);
       const timeTaken = Math.round((Date.now() - startTime) / 1000);
@@ -192,44 +222,75 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
     );
   }
 
+  const renderOptions = () => {
+    const isMultiSelect = currentQuestion.questionType === 'multiple-answer';
+
+    const optionsContent = currentQuestion.options.map((option, index) => {
+      const isSelected = selectedAnswers.includes(option);
+      const isCorrect = currentQuestion.correctAnswers.includes(option);
+      const optionId = `option-${index}`;
+      
+      return (
+        <div
+          key={index}
+          className={cn(
+            'flex items-center space-x-3 rounded-md border p-3 transition-colors text-left',
+            answerChecked && isCorrect && 'border-success/80 bg-success/10 text-success-foreground',
+            answerChecked && isSelected && !isCorrect && 'border-destructive/80 bg-destructive/10 text-destructive-foreground',
+            !answerChecked && 'cursor-pointer hover:bg-accent/50',
+            !answerChecked && isSelected && 'border-primary bg-primary/10'
+          )}
+          onClick={() => handleSelectionChange(option, !isSelected)}
+        >
+          {isMultiSelect ? (
+            <Checkbox id={optionId} checked={isSelected} disabled={answerChecked} />
+          ) : (
+            <RadioGroupItem value={option} id={optionId} checked={isSelected} disabled={answerChecked} />
+          )}
+          <label htmlFor={optionId} className={cn('flex-1', !answerChecked && 'cursor-pointer')}>{option}</label>
+          {answerChecked && isCorrect && <CheckCircle2 className="text-success" />}
+          {answerChecked && isSelected && !isCorrect && <XCircle className="text-destructive" />}
+        </div>
+      );
+    });
+
+    if (isMultiSelect) {
+        return <div className="grid grid-cols-1 gap-3">{optionsContent}</div>;
+    }
+
+    return (
+        <RadioGroup
+            value={selectedAnswers[0] || ''}
+            onValueChange={(value) => handleSelectionChange(value, true)}
+            disabled={answerChecked}
+            className="grid grid-cols-1 gap-3"
+        >
+            {optionsContent}
+        </RadioGroup>
+    );
+  }
+
   return (
     <div className="w-full max-w-2xl mx-auto">
       <Progress value={progress} className="mb-4" />
       <Card key={currentQuestionIndex} className="shadow-lg animate-in fade-in-50 slide-in-from-bottom-5">
         <CardHeader>
-          <CardTitle className="font-headline text-2xl">{currentQuestion.question}</CardTitle>
+          {currentQuestion.questionType === 'code-snippet' ? (
+              <>
+                <div className="bg-muted p-4 rounded-md font-code text-sm overflow-x-auto">
+                    <pre><code>{currentQuestion.question}</code></pre>
+                </div>
+                <CardTitle className="font-headline text-xl pt-4">Based on the code above, select the correct option:</CardTitle>
+              </>
+          ) : (
+             <CardTitle className="font-headline text-2xl">{currentQuestion.question}</CardTitle>
+          )}
           <CardDescription>Question {currentQuestionIndex + 1} of {questions.length}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 gap-3">
-            {currentQuestion.options.map((option, index) => {
-              const isSelected = selectedAnswer === option;
-              const isCorrectAnswer = currentQuestion.correctAnswer === option;
-              
-              return (
-                <Button
-                  key={index}
-                  variant="outline"
-                  size="lg"
-                  className={cn(
-                    "justify-start h-auto py-3 text-left whitespace-normal",
-                    selectedAnswer && isCorrectAnswer && 'border-success/50 text-success bg-success/10 hover:bg-success/10',
-                    selectedAnswer && isSelected && !isCorrect && 'border-destructive/50 text-destructive bg-destructive/10 hover:bg-destructive/10',
-                    !selectedAnswer && 'hover:bg-primary/5 hover:border-primary'
-                  )}
-                  onClick={() => handleAnswerSelect(option)}
-                  disabled={!!selectedAnswer}
-                >
-                  <div className="flex-grow">{option}</div>
-                  {selectedAnswer && isSelected && isCorrect && <CheckCircle2 className="text-success" />}
-                  {selectedAnswer && isSelected && !isCorrect && <XCircle className="text-destructive" />}
-                  {selectedAnswer && !isSelected && isCorrect && <CheckCircle2 className="text-success" />}
-                </Button>
-              )
-            })}
-          </div>
+          {renderOptions()}
           
-          {(selectedAnswer && (isCorrect === false) && currentQuestion.explanation) && (
+          {(answerChecked && !isCorrect && currentQuestion.explanation) && (
             <Alert className="mt-4 animate-in fade-in-50" variant="destructive">
               <Lightbulb className="h-4 w-4" />
               <AlertTitle>Explanation</AlertTitle>
@@ -239,7 +300,7 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
             </Alert>
           )}
 
-          {!selectedAnswer && currentQuestion.hints?.length > 0 && (
+          {!answerChecked && currentQuestion.hints?.length > 0 && (
              <Alert className="mt-4 animate-in fade-in-50" variant="default">
                 <Lightbulb className="h-4 w-4" />
                 <AlertTitle>Hints</AlertTitle>
@@ -259,9 +320,13 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
           )}
         </CardContent>
         <CardFooter>
-          {selectedAnswer && (
+          {answerChecked ? (
             <Button onClick={handleNext} className="w-full animate-in fade-in-50">
               {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
+            </Button>
+          ) : (
+            <Button onClick={handleCheckAnswer} disabled={selectedAnswers.length === 0} className="w-full">
+                Check Answer
             </Button>
           )}
         </CardFooter>
