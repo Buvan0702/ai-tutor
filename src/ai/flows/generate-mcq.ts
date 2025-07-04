@@ -45,15 +45,16 @@ const generateMcqPrompt = ai.definePrompt({
   The difficulty level for the questions should be {{difficulty}}.
 
   Please generate a mix of the following question types:
-  1. 'multiple-choice': A standard question with only one correct answer.
-  2. 'multiple-answer': A question where one or more options are correct. The user must select all correct options.
-  3. 'code-snippet': A question based on a block of code. The 'question' field should ONLY contain the raw code. The options should be potential outputs, error descriptions, or explanations. This type must have only one correct answer.
+  - 'multiple-choice': A standard question with one correct answer.
+  - 'multiple-answer': A question where users must select ALL correct options.
+  - 'code-snippet': A question based on a block of code with one correct answer.
 
-  For each question:
-  - It should have 4 options.
-  - The 'correctAnswers' field must be an array containing all correct options. For 'multiple-choice' and 'code-snippet' types, this array will contain exactly one string. For 'multiple-answer', it can contain one or more.
-  - Provide a concise explanation for the correct answer(s).
-  - Provide 2-3 progressively revealing hints.
+  For every question you generate:
+  - Provide exactly 4 options.
+  - The 'question' for a 'code-snippet' type must ONLY be the raw code itself.
+  - The 'correctAnswers' field must be an array containing the exact text of the correct option(s). For 'multiple-choice' and 'code-snippet' questions, this array must contain exactly one answer. For 'multiple-answer' questions, it can contain one or more answers.
+  - Provide a concise explanation for why the answer(s) are correct.
+  - Provide 2-3 helpful hints that guide the user without giving away the answer.
   `,
   config: {
     safetySettings: [
@@ -86,7 +87,7 @@ const generateMcqFlow = ai.defineFlow(
   async input => {
     const {output} = await generateMcqPrompt(input);
     if (!output) {
-      throw new Error('The AI failed to generate questions. This could be due to the topic being too sensitive or unsupported. Please try a different topic.');
+      throw new Error('The AI failed to generate valid questions. This could be due to the topic being too sensitive, niche, or complex for the AI to handle. Please try a different or broader topic.');
     }
     return output;
   }
