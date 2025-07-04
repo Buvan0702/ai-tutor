@@ -20,10 +20,9 @@ const AuthForm = ({ isSignUp, onForgotPassword }: { isSignUp?: boolean, onForgot
   const { toast } = useToast();
 
   const handleAuthError = (error: any) => {
+    console.error("Authentication Error:", error);
     let description = 'An unexpected error occurred. Please try again.';
-    if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
-      description = 'Firebase configuration is missing. Please add your credentials to the .env file.';
-    } else if (error.code === 'auth/operation-not-allowed') {
+    if (error.code === 'auth/operation-not-allowed') {
       description = 'This sign-in method is not enabled. Please enable it in your Firebase console under Authentication > Sign-in method.';
     } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
       description = 'Invalid email or password. Please try again.';
@@ -124,6 +123,7 @@ const ResetPasswordForm = ({ onBack }: { onBack: () => void }) => {
             });
             onBack();
         } catch (error: any) {
+            console.error("Password Reset Error:", error);
             let description = 'An unknown error occurred.';
             if (error.code === 'auth/user-not-found') {
                 description = 'No user found with this email address.';
