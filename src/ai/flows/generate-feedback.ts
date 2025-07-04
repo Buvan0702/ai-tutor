@@ -11,6 +11,7 @@ const UserAnswerSchema = z.object({
     selectedAnswer: z.string(),
     correctAnswer: z.string(),
     isCorrect: z.boolean(),
+    explanation: z.string(),
 });
 
 const GenerateFeedbackInputSchema = z.object({
@@ -41,10 +42,13 @@ const generateFeedbackPrompt = ai.definePrompt({
     - Question: "{{question}}"
       - Their Answer: "{{selectedAnswer}}" ({{#if isCorrect}}Correct{{else}}Incorrect{{/if}})
       - Correct Answer: "{{correctAnswer}}"
+      {{#unless isCorrect}}
+      - Explanation for the correct answer: "{{explanation}}"
+      {{/unless}}
     {{/each}}
 
     Please analyze their answers and provide:
-    1. A single paragraph of personalized, constructive feedback. Start by acknowledging their effort. Point out concepts they seem to have grasped well based on their correct answers. For the incorrect answers, gently explain the underlying concepts they might be struggling with. Do not just list the wrong answers. Be encouraging and supportive.
+    1. A single paragraph of personalized, constructive feedback. Start by acknowledging their effort. Point out concepts they seem to have grasped well based on their correct answers. For the incorrect answers, use the provided explanation to gently clarify the underlying concepts they might be struggling with. Do not just list the wrong answers. Be encouraging and supportive.
     2. A list of 2-3 suggestions for related topics to study next. These could be topics that build on the current one, or foundational topics if they struggled.
     3. A list of 2-3 specific YouTube search queries that would help the user find videos about the concepts they answered incorrectly. For example, if they struggled with React state management, a query could be "React useState hook tutorial".
     `,
