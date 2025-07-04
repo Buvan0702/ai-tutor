@@ -213,24 +213,24 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
                   size="lg"
                   className={cn(
                     "justify-start h-auto py-3 text-left whitespace-normal",
-                    selectedAnswer && isCorrectAnswer && 'bg-green-100 border-green-500 text-green-900 hover:bg-green-100',
-                    selectedAnswer && isSelected && !isCorrect && 'bg-red-100 border-red-500 text-red-900 hover:bg-red-100',
+                    selectedAnswer && isCorrectAnswer && 'border-success/50 text-success bg-success/10 hover:bg-success/10',
+                    selectedAnswer && isSelected && !isCorrect && 'border-destructive/50 text-destructive bg-destructive/10 hover:bg-destructive/10',
                     !selectedAnswer && 'hover:bg-primary/5 hover:border-primary'
                   )}
                   onClick={() => handleAnswerSelect(option)}
                   disabled={!!selectedAnswer}
                 >
                   <div className="flex-grow">{option}</div>
-                  {selectedAnswer && isSelected && isCorrect && <CheckCircle2 className="text-green-500" />}
-                  {selectedAnswer && isSelected && !isCorrect && <XCircle className="text-red-500" />}
-                  {selectedAnswer && !isSelected && isCorrect && <CheckCircle2 className="text-green-500" />}
+                  {selectedAnswer && isSelected && isCorrect && <CheckCircle2 className="text-success" />}
+                  {selectedAnswer && isSelected && !isCorrect && <XCircle className="text-destructive" />}
+                  {selectedAnswer && !isSelected && isCorrect && <CheckCircle2 className="text-success" />}
                 </Button>
               )
             })}
           </div>
           
           {(selectedAnswer && (isCorrect === false) && currentQuestion.explanation) && (
-            <Alert className="mt-4 animate-in fade-in-50">
+            <Alert className="mt-4 animate-in fade-in-50" variant="destructive">
               <Lightbulb className="h-4 w-4" />
               <AlertTitle>Explanation</AlertTitle>
               <AlertDescription>

@@ -354,7 +354,7 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGe
                         <div key={index}>
                             <p className='font-semibold'>{index + 1}. {answer.question}</p>
                             <div className='mt-2 space-y-2'>
-                                <div className={cn('p-2 rounded-md border text-sm', answer.isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50')}>
+                                <div className={cn('p-2 rounded-md border text-sm', answer.isCorrect ? 'border-success/50 bg-success/10 text-success' : 'border-destructive/50 bg-destructive/10 text-destructive')}>
                                     Your answer: {answer.selectedAnswer}
                                 </div>
                                 {!answer.isCorrect && (
