@@ -42,31 +42,35 @@ export default function QuizApp() {
   const [quizTopic, setQuizTopic] = useState('');
   const [quizDifficulty, setQuizDifficulty] = useState('Medium');
   const [quizKey, setQuizKey] = useState(0);
-  const [dashboardKey, setDashboardKey] = useState(Date.now());
   const [initialTopicForLearningPath, setInitialTopicForLearningPath] =
     useState<string | undefined>();
-
-  // New states for history
+  
   const [quizHistory, setQuizHistory] = useState<QuizResult[]>([]);
   const [historyLoading, setHistoryLoading] = useState(true);
   const [resultToReview, setResultToReview] = useState<QuizResult | null>(null);
+  const [refetchTrigger, setRefetchTrigger] = useState(0);
 
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
     const fetchHistory = async () => {
-      if (!user) return;
+      if (!user) {
+        setQuizHistory([]);
+        setHistoryLoading(false);
+        return;
+      }
       setHistoryLoading(true);
       const res = await getPerformanceDataAction({ userId: user.uid });
       if (res.success && res.data) {
-        // reverse() mutates the array, so slice it first
-        setQuizHistory(res.data.slice().reverse());
+        setQuizHistory(res.data);
+      } else {
+        setQuizHistory([]);
       }
       setHistoryLoading(false);
     };
     fetchHistory();
-  }, [user, dashboardKey]);
+  }, [user, refetchTrigger]);
 
   const handleQuizCreated = (
     newQuestions: QuizQuestion[],
@@ -77,7 +81,7 @@ export default function QuizApp() {
     setQuizTopic(topic);
     setQuizDifficulty(difficulty);
     setQuizKey((prev) => prev + 1);
-    setResultToReview(null); // Clear any reviewed result when starting new quiz
+    setResultToReview(null); 
   };
 
   const handleStartQuizFromPath = async (topic: string) => {
@@ -104,7 +108,7 @@ export default function QuizApp() {
     setQuestions(null);
     setQuizTopic('');
     setActiveView('dashboard');
-    setDashboardKey(Date.now()); // This will force the dashboard and history to refetch data
+    setRefetchTrigger((prev) => prev + 1);
   };
 
   const startNewQuiz = () => {
@@ -178,7 +182,8 @@ export default function QuizApp() {
       case 'dashboard':
         return (
           <PerformanceDashboard
-            key={dashboardKey}
+            results={quizHistory}
+            loading={historyLoading}
             onStartNewQuiz={startNewQuiz}
             onRetryQuiz={handleRetryQuiz}
             onGenerateLearningPath={handleGenerateLearningPath}
@@ -266,7 +271,7 @@ export default function QuizApp() {
                   </p>
                 )}
                 {!historyLoading &&
-                  quizHistory.map((result) => (
+                  quizHistory.slice().reverse().map((result) => (
                     <SidebarMenuItem key={result.id}>
                       <SidebarMenuButton
                         onClick={() => handleHistoryClick(result)}

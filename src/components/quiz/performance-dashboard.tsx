@@ -18,7 +18,6 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { format } from "date-fns"
-import { useAuth } from '@/context/auth-context';
 import {
   Dialog,
   DialogContent,
@@ -32,34 +31,17 @@ import { Alert, AlertDescription } from '../ui/alert';
 
 
 interface PerformanceDashboardProps {
+    results: QuizResult[];
+    loading: boolean;
     onStartNewQuiz: () => void;
     onRetryQuiz: (topic: string, difficulty: string, questionCount: number) => Promise<void>;
     onGenerateLearningPath: (topic: string) => void;
     initialResultToReview?: QuizResult | null;
 }
 
-export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGenerateLearningPath, initialResultToReview }: PerformanceDashboardProps) {
-  const [results, setResults] = useState<QuizResult[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function PerformanceDashboard({ results, loading, onStartNewQuiz, onRetryQuiz, onGenerateLearningPath, initialResultToReview }: PerformanceDashboardProps) {
   const [retryingQuizId, setRetryingQuizId] = useState<string | null>(null);
   const [reviewingResult, setReviewingResult] = useState<QuizResult | null>(null);
-  const { user } = useAuth();
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
-      setLoading(true);
-      const res = await getPerformanceDataAction({ userId: user.uid });
-      if (res.success && res.data) {
-        setResults(res.data);
-      }
-      setLoading(false);
-    };
-    fetchData();
-  }, [user]);
 
   useEffect(() => {
     if (initialResultToReview) {
