@@ -20,16 +20,34 @@ const AuthForm = ({ isSignUp, onForgotPassword }: { isSignUp?: boolean, onForgot
   const { toast } = useToast();
 
   const handleAuthError = (error: any) => {
-    let description = error.message;
-    if (error.code === 'auth/configuration-not-found') {
+    let description = 'An unexpected error occurred. Please try again.';
+    if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+      description = 'Firebase configuration is missing. Please add your credentials to the .env file.';
+    } else if (error.code === 'auth/operation-not-allowed') {
       description = 'This sign-in method is not enabled. Please enable it in your Firebase console under Authentication > Sign-in method.';
     } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
       description = 'Invalid email or password. Please try again.';
+    } else if (error.code === 'auth/email-already-in-use') {
+      description = 'An account with this email address already exists.';
     }
     toast({ variant: 'destructive', title: isSignUp ? 'Sign-up failed' : 'Sign-in failed', description });
   };
+  
+  const checkFirebaseConfig = () => {
+    if (!process.env.NEXT_PUBLIC_FIREBASE_API_KEY) {
+      toast({
+        variant: 'destructive',
+        title: 'Configuration Error',
+        description: 'Firebase credentials are not configured. Please add them to your .env file to enable authentication.',
+      });
+      return false;
+    }
+    return true;
+  }
 
   const handleGoogleSignIn = async () => {
+    if (!checkFirebaseConfig()) return;
+    
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       prompt: "select_account"
@@ -43,6 +61,8 @@ const AuthForm = ({ isSignUp, onForgotPassword }: { isSignUp?: boolean, onForgot
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!checkFirebaseConfig()) return;
+
     try {
       if (isSignUp) {
         await createUserWithEmailAndPassword(auth, email, password);
