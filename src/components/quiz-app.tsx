@@ -89,6 +89,7 @@ export default function QuizApp() {
     difficulty: string,
     questionCount: number
   ) => {
+    toast({ title: 'Generating your quiz...', description: `Retrying: ${topic}` });
     const result = await generateQuizAction({
       topic,
       questionCount,
