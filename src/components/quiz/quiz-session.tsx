@@ -5,16 +5,19 @@ import type { QuizQuestion, UserAnswer, AIFeedback } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle2, XCircle, Award, RotateCw, Lightbulb, Loader2, Youtube, MessageSquare } from 'lucide-react';
+import { CheckCircle2, XCircle, Award, RotateCw, Lightbulb, Loader2, Youtube, MessageSquare, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { saveQuizResultAction, generateFeedbackAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useAuth } from '@/context/auth-context';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog';
 import { ChatTutor } from '../chat-tutor';
 import { Checkbox } from '../ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '../ui/radio-group';
+import { ScrollArea } from '../ui/scroll-area';
+import { Separator } from '../ui/separator';
+import { format } from 'date-fns';
 
 interface QuizSessionProps {
   questions: QuizQuestion[];
@@ -33,7 +36,6 @@ function arraysEqual(a1: string[], a2: string[]) {
     return true;
 }
 
-
 export default function QuizSession({ questions, topic, difficulty, onFinish }: QuizSessionProps) {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<string[]>([]);
@@ -47,6 +49,7 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
   const [revealedHints, setRevealedHints] = useState<string[]>([]);
   const [startTime, setStartTime] = useState<number>(0);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isReviewOpen, setIsReviewOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   
@@ -146,6 +149,7 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
   };
 
   if (isFinished) {
+    const timeTaken = Math.round((Date.now() - startTime) / 1000);
     return (
       <>
         <Card className="w-full max-w-2xl mx-auto shadow-lg animate-in fade-in-50">
@@ -202,20 +206,66 @@ export default function QuizSession({ questions, topic, difficulty, onFinish }: 
               </CardContent>
             </Card>
           </CardContent>
-          <CardFooter className="grid grid-cols-1 md:grid-cols-2 gap-2">
+          <CardFooter className="grid grid-cols-1 md:grid-cols-3 gap-2">
+            <Button onClick={() => setIsReviewOpen(true)} variant="outline">
+                <FileText className="mr-2" />
+                Review Answers
+            </Button>
             <Button onClick={() => setIsChatOpen(true)} variant="outline">
                 <MessageSquare className="mr-2" />
                 Ask AI Tutor
             </Button>
-            <Button onClick={onFinish}>
+            <Button onClick={onFinish} className="md:col-span-1">
                 <RotateCw className="mr-2" />
-                Take Another Quiz
+                Take Another
             </Button>
           </CardFooter>
         </Card>
+        
         <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
             <DialogContent className="max-w-3xl h-[80vh] p-0 gap-0">
                 <ChatTutor topic={topic} />
+            </DialogContent>
+        </Dialog>
+
+        <Dialog open={isReviewOpen} onOpenChange={setIsReviewOpen}>
+            <DialogContent className="max-w-3xl">
+                <DialogHeader>
+                    <DialogTitle>Reviewing Quiz: "{topic}"</DialogTitle>
+                    <CardDescription>
+                        Taken on {format(new Date(startTime), "PPP")} - Score: {score}/{questions.length}
+                        {timeTaken && ` - Time: ${Math.floor(timeTaken / 60)}m ${timeTaken % 60}s`}
+                    </CardDescription>
+                </DialogHeader>
+                <ScrollArea className='h-[60vh]'>
+                    <div className='p-6 space-y-6'>
+                    {userAnswers.map((answer, index) => (
+                        <div key={index}>
+                            <p className='font-semibold'>{index + 1}. {questions[index].questionType === 'code-snippet' ? 'Based on the code snippet...' : questions[index].question}</p>
+                            {questions[index].questionType === 'code-snippet' && (
+                                <div className="bg-muted p-4 rounded-md font-code text-sm overflow-x-auto my-2">
+                                    <pre><code>{questions[index].question}</code></pre>
+                                </div>
+                            )}
+                            <div className='mt-2 space-y-2'>
+                                <div className={cn('p-2 rounded-md border text-sm', answer.isCorrect ? 'border-success/50 bg-success/10' : 'border-destructive/50 bg-destructive/10')}>
+                                    Your answer: {answer.selectedAnswers.join(', ')}
+                                </div>
+                                {!answer.isCorrect && (
+                                    <Alert variant={answer.isCorrect ? 'default' : 'destructive'}>
+                                        {answer.isCorrect ? <CheckCircle2 className="h-4 w-4" /> : <XCircle className="h-4 w-4" />}
+                                        <AlertDescription>
+                                            <span className='font-semibold'>Correct answer:</span> {answer.correctAnswers.join(', ')}
+                                            <Separator className='my-2' />
+                                            {answer.explanation}
+                                        </AlertDescription>
+                                    </Alert>
+                                )}
+                            </div>
+                        </div>
+                    ))}
+                    </div>
+                </ScrollArea>
             </DialogContent>
         </Dialog>
       </>
