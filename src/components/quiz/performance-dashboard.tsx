@@ -199,6 +199,7 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGe
                             variant="outline"
                             onClick={handlePracticeWeakestTopic}
                             disabled={retryingQuizId === 'practice-weakest'}
+                            className="no-print"
                         >
                             {retryingQuizId === 'practice-weakest' ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -269,7 +270,7 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGe
       </div>
 
        {weakestTopic && (
-        <Card className="card-print animate-in fade-in-50">
+        <Card className="card-print animate-in fade-in-50 no-print">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <BookOpenCheck /> Recommendation
@@ -354,7 +355,7 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGe
                         <div key={index}>
                             <p className='font-semibold'>{index + 1}. {answer.question}</p>
                             <div className='mt-2 space-y-2'>
-                                <div className={cn('p-2 rounded-md border text-sm', answer.isCorrect ? 'border-success/50 bg-success/10 text-success' : 'border-destructive/50 bg-destructive/10 text-destructive')}>
+                                <div className={cn('p-2 rounded-md border text-sm', answer.isCorrect ? 'border-success/50 bg-success/10' : 'border-destructive/50 bg-destructive/10')}>
                                     Your answer: {answer.selectedAnswers.join(', ')}
                                 </div>
                                 {!answer.isCorrect && (

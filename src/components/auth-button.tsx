@@ -46,7 +46,7 @@ const AuthForm = ({ isSignUp, onForgotPassword }: { isSignUp?: boolean, onForgot
       description = 'Your Firebase API Key is not valid. Please check your .env file and ensure it matches the key from your Firebase project settings.';
     } else if (error.code === 'auth/operation-not-allowed') {
       description = 'This sign-in method is not enabled. Please enable it in your Firebase console under Authentication > Sign-in method.';
-    } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+    } else if (error.code === 'auth/invalid-credential') {
       description = 'Invalid email or password. Please try again.';
     } else if (error.code === 'auth/email-already-in-use') {
       description = 'An account with this email address already exists.';
