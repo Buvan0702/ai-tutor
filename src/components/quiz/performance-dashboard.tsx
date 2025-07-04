@@ -35,9 +35,10 @@ interface PerformanceDashboardProps {
     onStartNewQuiz: () => void;
     onRetryQuiz: (topic: string, difficulty: string, questionCount: number) => Promise<void>;
     onGenerateLearningPath: (topic: string) => void;
+    initialResultToReview?: QuizResult | null;
 }
 
-export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGenerateLearningPath }: PerformanceDashboardProps) {
+export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGenerateLearningPath, initialResultToReview }: PerformanceDashboardProps) {
   const [results, setResults] = useState<QuizResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [retryingQuizId, setRetryingQuizId] = useState<string | null>(null);
@@ -59,6 +60,21 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGe
     };
     fetchData();
   }, [user]);
+
+  useEffect(() => {
+    if (initialResultToReview) {
+      // Find the full result from the list to make sure we have all data,
+      // as the prop might be a partial object.
+      const fullResult = results.find(r => r.id === initialResultToReview.id);
+      if (fullResult) {
+        setReviewingResult(fullResult);
+      } else if (initialResultToReview.userAnswers) {
+        // If results aren't loaded yet, just set it directly.
+        // The dialog relies on userAnswers which should be in the object.
+        setReviewingResult(initialResultToReview);
+      }
+    }
+  }, [initialResultToReview, results]);
 
   const handleRetryClick = async (result: QuizResult) => {
     if (!result.id) return;
@@ -379,5 +395,3 @@ export default function PerformanceDashboard({ onStartNewQuiz, onRetryQuiz, onGe
     </div>
   );
 }
-
-    
