@@ -34,7 +34,7 @@ const AuthForm = ({ isSignUp, onForgotPassword }: { isSignUp?: boolean, onForgot
     if (error.code === 'auth/operation-not-allowed') {
       description = 'This sign-in method is not enabled. Please enable it in your Firebase console under Authentication > Sign-in method.';
     } else if (error.code === 'auth/unauthorized-domain') {
-      description = 'This domain is not authorized for sign-in. Check your Firebase console and the browser console for more details.';
+      description = "This domain is not authorized. Go to your Firebase console -> Authentication -> Settings -> Authorized Domains and add 'localhost'. Check the browser console for more debugging info.";
     } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
       description = 'Invalid email or password. Please try again.';
     } else if (error.code === 'auth/email-already-in-use') {
