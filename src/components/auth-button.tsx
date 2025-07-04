@@ -21,9 +21,20 @@ const AuthForm = ({ isSignUp, onForgotPassword }: { isSignUp?: boolean, onForgot
 
   const handleAuthError = (error: any) => {
     console.error("Authentication Error:", error);
+
+    // Log project details for debugging domain authorization issues
+    if (error.code === 'auth/unauthorized-domain') {
+        console.log('%cVerifying Firebase project connection for auth:', 'font-weight: bold; color: orange;');
+        console.log('Project ID in use by app:', auth.app.options.projectId);
+        console.log('Auth Domain in use by app:', auth.app.options.authDomain);
+        console.log('%cPlease ensure this domain is added to your Firebase authorized domains list.', 'color: orange;');
+    }
+
     let description = 'An unexpected error occurred. Please try again.';
     if (error.code === 'auth/operation-not-allowed') {
       description = 'This sign-in method is not enabled. Please enable it in your Firebase console under Authentication > Sign-in method.';
+    } else if (error.code === 'auth/unauthorized-domain') {
+      description = 'This domain is not authorized for sign-in. Check your Firebase console and the browser console for more details.';
     } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
       description = 'Invalid email or password. Please try again.';
     } else if (error.code === 'auth/email-already-in-use') {
