@@ -32,7 +32,7 @@ import { ThemeToggle } from './theme-toggle';
 type ActiveView = 'dashboard' | 'new-quiz' | 'learning-paths';
 
 export default function QuizApp() {
-  const [activeView, setActiveView] = useState<ActiveView>('dashboard');
+  const [activeView, setActiveView] = useState<ActiveView>('new-quiz');
   const [questions, setQuestions] = useState<QuizQuestion[] | null>(null);
   const [quizTopic, setQuizTopic] = useState('');
   const [quizDifficulty, setQuizDifficulty] = useState('Medium');
