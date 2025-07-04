@@ -37,6 +37,7 @@ export default function QuizApp() {
   const [quizTopic, setQuizTopic] = useState('');
   const [quizDifficulty, setQuizDifficulty] = useState('Medium');
   const [quizKey, setQuizKey] = useState(0);
+  const [dashboardKey, setDashboardKey] = useState(Date.now());
   const [initialTopicForLearningPath, setInitialTopicForLearningPath] = useState<string | undefined>();
   const { toast } = useToast();
   const { user } = useAuth();
@@ -76,6 +77,7 @@ export default function QuizApp() {
     setQuestions(null);
     setQuizTopic('');
     setActiveView('dashboard');
+    setDashboardKey(Date.now()); // This will force the dashboard to remount and refetch data
   };
 
   const startNewQuiz = () => {
@@ -141,6 +143,7 @@ export default function QuizApp() {
       case 'dashboard':
         return (
           <PerformanceDashboard
+            key={dashboardKey}
             onStartNewQuiz={startNewQuiz}
             onRetryQuiz={handleRetryQuiz}
             onGenerateLearningPath={handleGenerateLearningPath}
