@@ -33,6 +33,7 @@ import {
 import { useAuth } from '@/context/auth-context';
 import { ThemeToggle } from './theme-toggle';
 import { ScrollArea } from './ui/scroll-area';
+import LandingChatTutor from './landing-chat-tutor';
 
 type ActiveView = 'dashboard' | 'new-quiz' | 'learning-paths';
 
@@ -323,6 +324,7 @@ export default function QuizApp() {
           </div>
           {renderContent()}
         </main>
+        <LandingChatTutor onTopicSelect={handleStartQuizFromPath} />
       </SidebarInset>
     </SidebarProvider>
   );

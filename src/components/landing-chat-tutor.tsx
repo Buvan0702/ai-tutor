@@ -10,12 +10,17 @@ import { cn } from '@/lib/utils';
 import { suggestTopicAction } from '@/app/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { ChatMessage } from '@/lib/types';
+import { useAuth } from '@/context/auth-context';
 
 type SuggestionMessage = ChatMessage & {
     suggestedTopics?: string[];
 };
 
-export default function LandingChatTutor() {
+interface LandingChatTutorProps {
+    onTopicSelect?: (topic: string) => void;
+}
+
+export default function LandingChatTutor({ onTopicSelect }: LandingChatTutorProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<SuggestionMessage[]>([
     {
@@ -28,6 +33,7 @@ export default function LandingChatTutor() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -39,12 +45,16 @@ export default function LandingChatTutor() {
   }, [messages]);
 
   const handleTopicClick = (topic: string) => {
-    sessionStorage.setItem('pendingQuizTopic', topic);
     setIsOpen(false);
-    toast({
-        title: 'Quiz Topic Selected!',
-        description: `Please sign in or sign up to start your quiz on "${topic}".`,
-    });
+    if (user && onTopicSelect) {
+        onTopicSelect(topic);
+    } else {
+        sessionStorage.setItem('pendingQuizTopic', topic);
+        toast({
+            title: 'Quiz Topic Selected!',
+            description: `Please sign in or sign up to start your quiz on "${topic}".`,
+        });
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
