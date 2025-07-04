@@ -21,28 +21,37 @@ const AuthForm = ({ isSignUp, onForgotPassword }: { isSignUp?: boolean, onForgot
 
   const handleAuthError = (error: any) => {
     console.error("Authentication Error:", error);
-
-    // Log project details for debugging domain authorization issues
-    if (error.code === 'auth/unauthorized-domain') {
-        console.log('%cVerifying Firebase project connection for auth:', 'font-weight: bold; color: orange;');
-        console.log('Project ID in use by app:', auth.app.options.projectId);
-        console.log('Auth Domain in use by app:', auth.app.options.authDomain);
-        console.log('%cPlease ensure this domain is added to your Firebase authorized domains list.', 'color: orange;');
-    }
-
+    
     let description = 'An unexpected error occurred. Please try again.';
-    if (error.code === 'auth/api-key-not-valid') {
+    let title = isSignUp ? 'Sign-up failed' : 'Sign-in failed';
+
+    if (error.code === 'auth/unauthorized-domain') {
+      title = 'Configuration Error';
+      description = "This app's domain is not authorized. Check the browser console for a step-by-step guide to fix this in your Firebase settings.";
+      console.warn(
+        `%c--- FIXING 'auth/unauthorized-domain' ---`,
+        'color: #F57C00; font-size: 14px; font-weight: bold;'
+      );
+      console.log(`This error means Firebase is blocking requests from your current location for security.`);
+      console.log(`%cSTEP 1: Find your current domain.`, 'font-weight: bold;');
+      console.log(`Your browser reports the current domain as: %c${window.location.hostname}`, 'background: #eee; color: #333; padding: 2px 4px; border-radius: 3px;');
+      console.log(`%cSTEP 2: Add this domain to Firebase.`, 'font-weight: bold;');
+      console.log(`  - Go to your Firebase Console > Authentication > Settings > Authorized domains.`);
+      console.log(`  - Click "Add domain".`);
+      console.log(`  - Enter the exact domain from Step 1 (e.g., 'localhost').`);
+      console.log(`%cSTEP 3: Verify your Firebase Project.`, 'font-weight: bold;');
+      console.log(`This app is trying to connect to Firebase project: %c${auth.app.options.projectId}`, 'background: #eee; color: #333; padding: 2px 4px; border-radius: 3px;');
+      console.log(`Make sure this is the same project you're configuring in the Firebase Console.`);
+    } else if (error.code === 'auth/api-key-not-valid') {
       description = 'Your Firebase API Key is not valid. Please check your .env file and ensure it matches the key from your Firebase project settings.';
     } else if (error.code === 'auth/operation-not-allowed') {
       description = 'This sign-in method is not enabled. Please enable it in your Firebase console under Authentication > Sign-in method.';
-    } else if (error.code === 'auth/unauthorized-domain') {
-      description = "This domain is not authorized. Go to your Firebase console -> Authentication -> Settings -> Authorized Domains and add 'localhost'. Check the browser console for more debugging info.";
     } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
       description = 'Invalid email or password. Please try again.';
     } else if (error.code === 'auth/email-already-in-use') {
       description = 'An account with this email address already exists.';
     }
-    toast({ variant: 'destructive', title: isSignUp ? 'Sign-up failed' : 'Sign-in failed', description });
+    toast({ variant: 'destructive', title, description });
   };
   
   const checkFirebaseConfig = () => {
