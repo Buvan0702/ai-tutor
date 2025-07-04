@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   BrainCircuit,
   LayoutDashboard,
@@ -52,6 +52,46 @@ export default function QuizApp() {
 
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  const handleQuizCreated = useCallback((
+    newQuestions: QuizQuestion[],
+    topic: string,
+    difficulty: string
+  ) => {
+    setQuestions(newQuestions);
+    setQuizTopic(topic);
+    setQuizDifficulty(difficulty);
+    setQuizKey((prev) => prev + 1);
+    setResultToReview(null); 
+  }, []);
+
+  const handleStartQuizFromPath = useCallback(async (topic: string) => {
+    toast({ title: 'Generating your quiz...', description: `Topic: ${topic}` });
+    const result = await generateQuizAction({
+      topic,
+      questionCount: 5, // Default for learning paths
+      difficulty: 'Medium', // Default for learning paths
+    });
+
+    if (result.success && result.questions && result.questions.length > 0) {
+      handleQuizCreated(result.questions, topic, 'Medium');
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Failed to Start Quiz',
+        description:
+          result.error || 'Could not generate questions for this topic.',
+      });
+    }
+  }, [toast, handleQuizCreated]);
+
+  useEffect(() => {
+    const pendingTopic = sessionStorage.getItem('pendingQuizTopic');
+    if (pendingTopic && user) {
+        sessionStorage.removeItem('pendingQuizTopic');
+        handleStartQuizFromPath(pendingTopic);
+    }
+  }, [user, handleStartQuizFromPath]);
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -71,38 +111,6 @@ export default function QuizApp() {
     };
     fetchHistory();
   }, [user, refetchTrigger]);
-
-  const handleQuizCreated = (
-    newQuestions: QuizQuestion[],
-    topic: string,
-    difficulty: string
-  ) => {
-    setQuestions(newQuestions);
-    setQuizTopic(topic);
-    setQuizDifficulty(difficulty);
-    setQuizKey((prev) => prev + 1);
-    setResultToReview(null); 
-  };
-
-  const handleStartQuizFromPath = async (topic: string) => {
-    toast({ title: 'Generating your quiz...', description: `Topic: ${topic}` });
-    const result = await generateQuizAction({
-      topic,
-      questionCount: 5, // Default for learning paths
-      difficulty: 'Medium', // Default for learning paths
-    });
-
-    if (result.success && result.questions && result.questions.length > 0) {
-      handleQuizCreated(result.questions, topic, 'Medium');
-    } else {
-      toast({
-        variant: 'destructive',
-        title: 'Failed to Start Quiz',
-        description:
-          result.error || 'Could not generate questions for this topic.',
-      });
-    }
-  };
 
   const handleQuizFinish = () => {
     setQuestions(null);

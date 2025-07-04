@@ -4,6 +4,7 @@ import { AuthButton } from '@/components/auth-button';
 import AnimatedBackground from '@/components/animated-background';
 import { BrainCircuit, Zap } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
+import LandingChatTutor from './landing-chat-tutor';
 
 const LandingPage = () => {
   return (
@@ -32,6 +33,7 @@ const LandingPage = () => {
           </div>
         </div>
       </main>
+      <LandingChatTutor />
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { generateMcq } from '@/ai/flows/generate-mcq';
 import { generateFeedback } from '@/ai/flows/generate-feedback';
 import { generateLearningPath } from '@/ai/flows/generate-learning-path';
 import { chatWithTutor } from '@/ai/flows/chat-tutor';
+import { suggestTopic } from '@/ai/flows/suggest-topic-flow';
 import { db } from '@/lib/firebase';
 import type { QuizResult, UserAnswer, ChatMessage } from '@/lib/types';
 import { addDoc, collection, getDocs, query, where, orderBy } from 'firebase/firestore';
@@ -93,6 +94,17 @@ export async function chatWithTutorAction(params: { topic: string, history: Chat
         return { success: true, response };
     } catch (error) {
         console.error('Error with AI Tutor:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Failed to get a response from the tutor.';
+        return { success: false, error: errorMessage };
+    }
+}
+
+export async function suggestTopicAction(params: { history: ChatMessage[] }) {
+    try {
+        const response = await suggestTopic(params.history);
+        return { success: true, response };
+    } catch (error) {
+        console.error('Error with AI Topic Suggester:', error);
         const errorMessage = error instanceof Error ? error.message : 'Failed to get a response from the tutor.';
         return { success: false, error: errorMessage };
     }
